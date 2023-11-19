@@ -1,21 +1,117 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>유폴린현서</title>
-</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Shooting Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
 
+        #player {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: blue;
+        }
+
+        .monster {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+        }
+
+        .bullet {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: yellow;
+        }
+    </style>
+</head>
 <body>
 
+    <div id="player"></div>
 
-    <h1>구리다</h1>
-    <h1>더 구리다</h1>
-    <button>추하다 </button>
-    
+    <script>
+        const player = document.getElementById('player');
+        const bullets = [];
 
-    <h2>L</h2>
-    <p>L</p>
+        document.addEventListener('keydown', movePlayer);
+        document.addEventListener('keydown', shootBullet);
+
+        function movePlayer(event) {
+            const step = 10;
+
+            switch (event.key) {
+                case 'ArrowUp':
+                    player.style.top = `${Math.max(0, player.offsetTop - step)}px`;
+                    break;
+                case 'ArrowDown':
+                    player.style.top = `${Math.min(window.innerHeight - player.offsetHeight, player.offsetTop + step)}px`;
+                    break;
+                case 'ArrowLeft':
+                    player.style.left = `${Math.max(0, player.offsetLeft - step)}px`;
+                    break;
+                case 'ArrowRight':
+                    player.style.left = `${Math.min(window.innerWidth - player.offsetWidth, player.offsetLeft + step)}px`;
+                    break;
+            }
+        }
+
+        function shootBullet(event) {
+            if (event.key === ' ') {
+                const bullet = document.createElement('div');
+                bullet.className = 'bullet';
+                bullet.style.top = `${player.offsetTop + player.offsetHeight / 2 - bullet.offsetHeight / 2}px`;
+                bullet.style.left = `${player.offsetLeft + player.offsetWidth}px`;
+                document.body.appendChild(bullet);
+
+                bullets.push(bullet);
+
+                // Move the bullet
+                const bulletMoveInterval = setInterval(() => {
+                    bullet.style.left = `${bullet.offsetLeft + 5}px`;
+
+                    // Check if the bullet hits a monster
+                    const hitMonster = checkCollision(bullet, document.querySelector('.monster'));
+                    if (hitMonster) {
+                        hitMonster.remove(); // Remove the monster
+                        bullet.remove(); // Remove the bullet
+                        clearInterval(bulletMoveInterval); // Stop moving the bullet
+                    }
+
+                    // Remove the bullet when it reaches the right edge of the screen
+                    if (bullet.offsetLeft > window.innerWidth) {
+                        bullet.remove();
+                        clearInterval(bulletMoveInterval);
+                    }
+                }, 16);
+            }
+        }
+
+        function checkCollision(element1, element2) {
+            const rect1 = element1.getBoundingClientRect();
+            const rect2 = element2.getBoundingClientRect();
+
+            return (
+                rect1.left < rect2.right &&
+                rect1.right > rect2.left &&
+                rect1.top < rect2.bottom &&
+                rect1.bottom > rect2.top
+            );
+        }
+
+        // Create a monster
+        const monster = document.createElement('div');
+        monster.className = 'monster';
+        monster.style.top = `${Math.random() * (window.innerHeight - monster.offsetHeight)}px`;
+        monster.style.left = `${Math.random() * (window.innerWidth - monster.offsetWidth)}px`;
+        document.body.appendChild(monster);
+    </script>
 
 </body>
-
 </html>
