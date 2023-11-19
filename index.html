@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Shooting Game</title>
+    <title>Enhanced Shooting Game</title>
     <style>
         body {
             margin: 0;
@@ -30,6 +30,12 @@
             height: 10px;
             background-color: yellow;
         }
+
+        .health-bar {
+            position: absolute;
+            height: 5px;
+            background-color: green;
+        }
     </style>
 </head>
 <body>
@@ -39,12 +45,29 @@
     <script>
         const player = document.getElementById('player');
         const bullets = [];
+        const monsters = [];
+        const playerHealth = 100; // Initial player health
+        let currentHealth = playerHealth;
+
+        // Initialize player health bar
+        const playerHealthBar = document.createElement('div');
+        playerHealthBar.className = 'health-bar';
+        playerHealthBar.style.top = `${player.offsetTop - 10}px`;
+        playerHealthBar.style.left = `${player.offsetLeft}px`;
+        document.body.appendChild(playerHealthBar);
+        updatePlayerHealthBar();
 
         document.addEventListener('keydown', movePlayer);
         document.addEventListener('keydown', shootBullet);
 
+        // Game loop
+        setInterval(() => {
+            moveMonsters();
+            checkMonsterPlayerCollision();
+        }, 16);
+
         function movePlayer(event) {
-            const step = 10;
+            const step = 5;
 
             switch (event.key) {
                 case 'ArrowUp':
@@ -66,6 +89,7 @@
             if (event.key === ' ') {
                 const bullet = document.createElement('div');
                 bullet.className = 'bullet';
+                bullet.damage = 10; // Bullet damage
                 bullet.style.top = `${player.offsetTop + player.offsetHeight / 2 - bullet.offsetHeight / 2}px`;
                 bullet.style.left = `${player.offsetLeft + player.offsetWidth}px`;
                 document.body.appendChild(bullet);
@@ -77,11 +101,22 @@
                     bullet.style.left = `${bullet.offsetLeft + 5}px`;
 
                     // Check if the bullet hits a monster
-                    const hitMonster = checkCollision(bullet, document.querySelector('.monster'));
+                    const hitMonster = checkCollision(bullet, monsters);
                     if (hitMonster) {
-                        hitMonster.remove(); // Remove the monster
-                        bullet.remove(); // Remove the bullet
-                        clearInterval(bulletMoveInterval); // Stop moving the bullet
+                        // Apply damage to the monster
+                        hitMonster.health -= bullet.damage;
+                        updateHealthBar(hitMonster);
+
+                        // Remove the bullet if it hits a monster
+                        bullet.remove();
+                        clearInterval(bulletMoveInterval);
+
+                        // Remove the monster if its health is depleted
+                        if (hitMonster.health <= 0) {
+                            hitMonster.element.remove();
+                            hitMonster.healthBar.remove();
+                            monsters.splice(monsters.indexOf(hitMonster), 1);
+                        }
                     }
 
                     // Remove the bullet when it reaches the right edge of the screen
@@ -93,24 +128,113 @@
             }
         }
 
-        function checkCollision(element1, element2) {
-            const rect1 = element1.getBoundingClientRect();
-            const rect2 = element2.getBoundingClientRect();
+        function moveMonsters() {
+            for (const monster of monsters) {
+                // Move monsters towards the player
+                const playerX = player.offsetLeft + player.offsetWidth / 2;
+                const playerY = player.offsetTop + player.offsetHeight / 2;
 
-            return (
-                rect1.left < rect2.right &&
-                rect1.right > rect2.left &&
-                rect1.top < rect2.bottom &&
-                rect1.bottom > rect2.top
-            );
+                const angle = Math.atan2(playerY - monster.offsetTop, playerX - monster.offsetLeft);
+                const speed = 2;
+                const deltaX = speed * Math.cos(angle);
+                const deltaY = speed * Math.sin(angle);
+
+                monster.style.left = `${monster.offsetLeft + deltaX}px`;
+                monster.style.top = `${monster.offsetTop + deltaY}px`;
+            }
         }
 
-        // Create a monster
-        const monster = document.createElement('div');
-        monster.className = 'monster';
-        monster.style.top = `${Math.random() * (window.innerHeight - monster.offsetHeight)}px`;
-        monster.style.left = `${Math.random() * (window.innerWidth - monster.offsetWidth)}px`;
-        document.body.appendChild(monster);
+        function checkMonsterPlayerCollision() {
+            for (const monster of monsters) {
+                // Check if the player collides with a monster
+                if (checkCollision(player, [monster])) {
+                    // Apply damage to the player
+                    currentHealth -= monster.damage || 10; // Default monster damage
+                    updatePlayerHealthBar();
+
+                    // Remove the monster
+                    monster.element.remove();
+                    monster.healthBar.remove();
+                    monsters.splice(monsters.indexOf(monster), 1);
+
+                    // Game over if player health is depleted
+                    if (currentHealth <= 0) {
+                        alert('Game Over!');
+                        resetGame();
+                    }
+                }
+            }
+        }
+
+        function updatePlayerHealthBar() {
+            playerHealthBar.style.width = `${(currentHealth / playerHealth) * 100}%`;
+        }
+
+        function updateHealthBar(monster) {
+            monster.healthBar.style.width = `${(monster.health / monster.maxHealth) * 100}%`;
+        }
+
+        function checkCollision(element, elements) {
+            const rect1 = element.getBoundingClientRect();
+
+            for (const otherElement of elements) {
+                const rect2 = otherElement.element.getBoundingClientRect();
+
+                if (
+                    rect1.left < rect2.right &&
+                    rect1.right > rect2.left &&
+                    rect1.top < rect2.bottom &&
+                    rect1.bottom > rect2.top
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Create a monster with a health bar
+        function createMonster() {
+            const monster = document.createElement('div');
+            monster.className = 'monster';
+            monster.health = 20; // Monster health
+            monster.maxHealth = 20; // Maximum health
+            monster.damage = 5; // Monster damage
+            monster.style.top = `${Math.random() * (window.innerHeight - monster.offsetHeight)}px`;
+            monster.style.left = `${Math.random() * (window.innerWidth - monster.offsetWidth)}px`;
+            document.body.appendChild(monster);
+
+            const healthBar = document.createElement('div');
+            healthBar.className = 'health-bar';
+            healthBar.style.top = `${monster.offsetTop - 10}px`;
+            healthBar.style.left = `${monster.offsetLeft}px`;
+            document.body.appendChild(healthBar);
+
+            monster.element = monster;
+            monster.healthBar = healthBar;
+
+            monsters.push(monster);
+            updateHealthBar(monster);
+        }
+
+        // Reset the game
+        function resetGame() {
+            currentHealth = playerHealth;
+            updatePlayerHealthBar();
+            for (const monster of monsters) {
+                monster.element.remove();
+                monster.healthBar.remove();
+            }
+            monsters.length = 0; // Clear the monsters array
+            createMonster();
+            createMonster();
+            createMonster();
+        }
+
+        // Create initial monsters
+        createMonster();
+        createMonster();
+        createMonster();
     </script>
 
 </body>
