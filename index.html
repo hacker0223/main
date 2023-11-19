@@ -33,7 +33,7 @@
 
         .health-bar {
             position: absolute;
-            height: 5px;
+            height: 3px; /* Adjust the height of the health bar */
             background-color: green;
         }
     </style>
@@ -52,7 +52,7 @@
         // Initialize player health bar
         const playerHealthBar = document.createElement('div');
         playerHealthBar.className = 'health-bar';
-        playerHealthBar.style.top = `${player.offsetTop - 10}px`;
+        playerHealthBar.style.top = `${player.offsetTop - 5}px`;
         playerHealthBar.style.left = `${player.offsetLeft}px`;
         document.body.appendChild(playerHealthBar);
         updatePlayerHealthBar();
@@ -66,20 +66,25 @@
             checkMonsterPlayerCollision();
         }, 16);
 
+        // Monster spawning loop
+        setInterval(() => {
+            createMonster();
+        }, 3000); // Spawn a new monster every 3 seconds
+
         function movePlayer(event) {
             const step = 5;
 
             switch (event.key) {
-                case 'ArrowUp':
+                case 'w':
                     player.style.top = `${Math.max(0, player.offsetTop - step)}px`;
                     break;
-                case 'ArrowDown':
+                case 's':
                     player.style.top = `${Math.min(window.innerHeight - player.offsetHeight, player.offsetTop + step)}px`;
                     break;
-                case 'ArrowLeft':
+                case 'a':
                     player.style.left = `${Math.max(0, player.offsetLeft - step)}px`;
                     break;
-                case 'ArrowRight':
+                case 'd':
                     player.style.left = `${Math.min(window.innerWidth - player.offsetWidth, player.offsetLeft + step)}px`;
                     break;
             }
@@ -135,7 +140,7 @@
                 const playerY = player.offsetTop + player.offsetHeight / 2;
 
                 const angle = Math.atan2(playerY - monster.offsetTop, playerX - monster.offsetLeft);
-                const speed = 2;
+                const speed = 3; // Increased monster speed
                 const deltaX = speed * Math.cos(angle);
                 const deltaY = speed * Math.sin(angle);
 
@@ -206,7 +211,7 @@
 
             const healthBar = document.createElement('div');
             healthBar.className = 'health-bar';
-            healthBar.style.top = `${monster.offsetTop - 10}px`;
+            healthBar.style.top = `${monster.offsetTop - 5}px`;
             healthBar.style.left = `${monster.offsetLeft}px`;
             document.body.appendChild(healthBar);
 
@@ -231,7 +236,7 @@
             createMonster();
         }
 
-        // Create initial monsters
+        // Initial monsters
         createMonster();
         createMonster();
         createMonster();
