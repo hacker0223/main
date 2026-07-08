@@ -27,6 +27,25 @@ export default function LearnScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <PageTitle subtitle="Plain-English explanations for everything in the app.">Learn</PageTitle>
 
+        <Pressable
+          onPress={() => router.push("/sandbox")}
+          style={({ pressed }) => [
+            styles.practiceCard,
+            { backgroundColor: colors.accentSurface, borderColor: colors.accent, opacity: pressed ? 0.85 : 1 },
+          ]}
+        >
+          <View style={[styles.practiceIcon, { backgroundColor: colors.accent }]}>
+            <Ionicons name="analytics-outline" size={20} color={colors.onAccent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.cardTitle, { color: colors.text }]}>Chart Sandbox</Text>
+            <Text style={[typography.caption, styles.summary, { color: colors.textMuted }]}>
+              Draw or generate a candlestick chart, practice reading it, then get AI pattern commentary.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        </Pressable>
+
         <SectionHeading title="Articles" />
         {articles.map((a) => (
           <Pressable
@@ -78,6 +97,16 @@ export default function LearnScreen() {
 
 const styles = StyleSheet.create({
   scroll: { paddingBottom: 32 },
+  practiceCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginBottom: 24,
+  },
+  practiceIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   articleCard: {
     flexDirection: "row",
     alignItems: "center",
