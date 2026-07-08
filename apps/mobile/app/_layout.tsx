@@ -17,6 +17,7 @@ export default function RootLayout() {
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="search" options={{ presentation: "modal" }} />
+        <Stack.Screen name="compare" options={{ presentation: "modal" }} />
       </Stack>
     </>
   );

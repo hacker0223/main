@@ -1,11 +1,13 @@
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
+import morgan from "morgan";
 import { stocksRouter } from "./routes/stocks";
 
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
 
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(cors());
 app.use(express.json());
 

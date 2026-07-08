@@ -1,13 +1,35 @@
-import type { ChartResponse, StockDetail, StockQuote, StockSearchResult } from "@summit/shared";
+import type {
+  ChartResponse,
+  Filing,
+  FundamentalsData,
+  InsiderTransaction,
+  StockDetail,
+  StockQuote,
+  StockSearchResult,
+} from "@summit/shared";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
-if (!API_URL) {
-  throw new Error("EXPO_PUBLIC_API_URL is not set — add it to apps/mobile/.env");
-}
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
 async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`);
+  if (!API_URL) {
+    throw new Error("Can't reach the server — app isn't configured with a backend URL.");
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { signal: controller.signal });
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("That took too long to load. Check your connection and try again.");
+    }
+    throw new Error("Can't reach the server. Check your connection and try again.");
+  } finally {
+    clearTimeout(timer);
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Request failed: ${res.status}`);
@@ -42,4 +64,25 @@ export interface NewsItem {
 
 export function fetchNews(symbol: string): Promise<NewsItem[]> {
   return apiGet(`/api/stocks/${encodeURIComponent(symbol)}/news`);
+}
+
+export function fetchFundamentals(symbol: string): Promise<FundamentalsData & { insiderTransactions: InsiderTransaction[] }> {
+  return apiGet(`/api/stocks/${encodeURIComponent(symbol)}/fundamentals`);
+}
+
+export function fetchFilings(symbol: string): Promise<Filing[]> {
+  return apiGet(`/api/stocks/${encodeURIComponent(symbol)}/filings`);
+}
+
+export interface ScreenerEntry {
+  symbol: string;
+  companyName: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  week52High?: number;
+}
+
+export function fetchScreener(kind: "gainers" | "losers" | "52w-highs"): Promise<ScreenerEntry[]> {
+  return apiGet(`/api/stocks/screeners/${kind}`);
 }

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
@@ -42,6 +43,7 @@ export default function SearchScreen() {
             autoCapitalize="characters"
             autoCorrect={false}
             returnKeyType="search"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
           {query.length > 0 ? (
             <Pressable onPress={() => setQuery("")} hitSlop={8}>

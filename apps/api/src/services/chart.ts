@@ -1,5 +1,6 @@
 import type { ChartPoint, ChartTimeframe } from "@summit/shared";
 import { cached } from "./cache";
+import { fetchWithTimeout, NotFoundError } from "./errors";
 
 // Yahoo Finance's chart endpoint is unofficial/undocumented — no public terms of
 // service for programmatic use. It's the only free source of historical OHLCV
@@ -37,7 +38,10 @@ async function fetchCandles(symbol: string, timeframe: ChartTimeframe): Promise<
   const { range, interval } = RANGE_PARAMS[timeframe];
   const url = `${YAHOO_BASE}/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
 
-  const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+  const res = await fetchWithTimeout(url, { headers: { "User-Agent": "Mozilla/5.0" } }, 8000);
+  if (res.status === 404) {
+    throw new NotFoundError(`Unknown symbol: ${symbol}`);
+  }
   if (!res.ok) {
     throw new Error(`Chart fetch failed for ${symbol}: ${res.status}`);
   }

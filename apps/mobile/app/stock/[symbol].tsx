@@ -3,6 +3,7 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { ChartTimeframe } from "@summit/shared";
 import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { CompanyLogo } from "../../src/components/CompanyLogo";
 import { ErrorState } from "../../src/components/ErrorState";
 import { PriceChange } from "../../src/components/PriceChange";
 import { PriceChart, type ChartMode } from "../../src/components/PriceChart";
@@ -10,7 +11,11 @@ import { Screen } from "../../src/components/Screen";
 import { SectionHeading } from "../../src/components/SectionHeading";
 import { Skeleton } from "../../src/components/Skeleton";
 import { StatGrid } from "../../src/components/StatGrid";
+import { AIInsightsTab } from "../../src/features/stock-detail/AIInsightsTab";
+import { FilingsTab } from "../../src/features/stock-detail/FilingsTab";
 import { formatCompactNumber, formatPercent, formatRatio } from "../../src/features/stock-detail/format";
+import { FundamentalsTab } from "../../src/features/stock-detail/FundamentalsTab";
+import { TechnicalsTab } from "../../src/features/stock-detail/TechnicalsTab";
 import { useChart } from "../../src/hooks/useChart";
 import { useNews } from "../../src/hooks/useNews";
 import { useStockDetail } from "../../src/hooks/useStockDetail";
@@ -71,7 +76,8 @@ export default function StockDetailScreen() {
               </>
             ) : (
               <>
-                <Text style={[typography.caption, { color: colors.textMuted }]}>
+                <CompanyLogo symbol={detail.data.quote.symbol} logoUrl={detail.data.quote.logoUrl} size={40} />
+                <Text style={[typography.caption, styles.companyName, { color: colors.textMuted }]}>
                   {detail.data.quote.companyName}
                 </Text>
                 <Text style={[typography.display, styles.price, { color: colors.text }]}>
@@ -93,7 +99,7 @@ export default function StockDetailScreen() {
           ) : (
             <PriceChart
               points={chart.data.points}
-              isPositive={(detail.data?.quote.change ?? 0) >= 0}
+              isPositive={chart.data.points[chart.data.points.length - 1].close >= chart.data.points[0].open}
               mode={chartMode}
             />
           )}
@@ -187,15 +193,23 @@ export default function StockDetailScreen() {
               detail.loading || !detail.data ? (
                 <OverviewSkeleton />
               ) : (
-                <OverviewTab detail={detail.data} />
+                <OverviewTab detail={detail.data} onOpenInsights={() => setSubTab("AI Insights")} />
               )
             ) : subTab === "News" ? (
               <NewsTab symbol={ticker} />
+            ) : subTab === "Fundamentals" ? (
+              <FundamentalsTab symbol={ticker} />
+            ) : subTab === "Technicals" ? (
+              <TechnicalsTab symbol={ticker} />
+            ) : subTab === "AI Insights" ? (
+              <AIInsightsTab symbol={ticker} keyStats={detail.data?.keyStats} />
+            ) : subTab === "Filings" ? (
+              <FilingsTab symbol={ticker} />
             ) : (
               <View style={styles.comingSoon}>
-                <Ionicons name="construct-outline" size={28} color={colors.textMuted} />
+                <Ionicons name="people-outline" size={28} color={colors.textMuted} />
                 <Text style={[typography.body, styles.comingSoonText, { color: colors.textMuted }]}>
-                  {subTab} is coming in a future build pass.
+                  Community discussion needs real user accounts first — coming after Auth is wired up.
                 </Text>
               </View>
             )}
@@ -242,7 +256,13 @@ function OverviewSkeleton() {
   );
 }
 
-function OverviewTab({ detail }: { detail: NonNullable<ReturnType<typeof useStockDetail>["data"]> }) {
+function OverviewTab({
+  detail,
+  onOpenInsights,
+}: {
+  detail: NonNullable<ReturnType<typeof useStockDetail>["data"]>;
+  onOpenInsights: () => void;
+}) {
   const { colors } = useTheme();
   const { keyStats, analystConsensus } = detail;
   const totalVotes = analystConsensus ? analystConsensus.buy + analystConsensus.hold + analystConsensus.sell : 0;
@@ -296,19 +316,27 @@ function OverviewTab({ detail }: { detail: NonNullable<ReturnType<typeof useStoc
       <View style={styles.aiSectionHeadingRow}>
         <Ionicons name="sparkles" size={15} color={colors.accent} />
         <Text style={[typography.sectionTitle, { color: colors.text }]}>Signal vs. Noise</Text>
-        <View style={[styles.sampleBadge, { backgroundColor: colors.accentSurface }]}>
-          <Text style={[typography.micro, { color: colors.accent, fontWeight: "700" }]}>COMING SOON</Text>
-        </View>
       </View>
-      <View
-        style={[styles.card, styles.aiCard, { backgroundColor: colors.accentSurface, borderColor: colors.accent }]}
+      <Pressable
+        onPress={onOpenInsights}
+        style={({ pressed }) => [
+          styles.card,
+          styles.aiCard,
+          { backgroundColor: colors.accentSurface, borderColor: colors.accent, opacity: pressed ? 0.8 : 1 },
+        ]}
       >
         <Text style={[typography.body, styles.aiSummary, { color: colors.text }]}>
-          Summit doesn't execute trades, so we have no incentive to get you to trade more. This card will flag
-          when a move looks driven by social hype rather than fundamentals — built directly from the sentiment
-          and risk data above, not a black-box prediction.
+          Summit doesn't execute trades, so we have no incentive to get you to trade more. See the real risk score
+          and probabilistic price range — built from this stock's own volatility and valuation, not a black-box
+          prediction.
         </Text>
-      </View>
+        <View style={styles.aiCta}>
+          <Text style={[typography.caption, { color: colors.accent, fontWeight: "700" }]}>
+            View risk score & range
+          </Text>
+          <Ionicons name="arrow-forward" size={14} color={colors.accent} />
+        </View>
+      </Pressable>
     </View>
   );
 }
@@ -342,15 +370,21 @@ function NewsTab({ symbol }: { symbol: string | undefined }) {
     );
   }
 
+  const openArticle = (url: string) => {
+    Linking.openURL(url).catch(() => {
+      Alert.alert("Couldn't open link", "This article's link looks broken.");
+    });
+  };
+
   return (
     <View>
       {news.data.map((item) => (
         <Pressable
           key={item.headline + item.datetime}
-          onPress={() => Linking.openURL(item.url)}
+          onPress={() => openArticle(item.url)}
           style={[styles.newsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
         >
-          {item.image ? <Image source={{ uri: item.image }} style={styles.newsImage} /> : null}
+          <NewsThumbnail uri={item.image} />
           <View style={styles.newsText}>
             <Text style={[typography.cardTitle, { color: colors.text }]} numberOfLines={2}>
               {item.headline}
@@ -363,6 +397,21 @@ function NewsTab({ symbol }: { symbol: string | undefined }) {
       ))}
     </View>
   );
+}
+
+function NewsThumbnail({ uri }: { uri?: string }) {
+  const { colors } = useTheme();
+  const [failed, setFailed] = useState(false);
+
+  if (!uri || failed) {
+    return (
+      <View style={[styles.newsImage, styles.newsImageFallback, { backgroundColor: colors.surfaceRaised }]}>
+        <Ionicons name="newspaper-outline" size={20} color={colors.textMuted} />
+      </View>
+    );
+  }
+
+  return <Image source={{ uri }} style={styles.newsImage} onError={() => setFailed(true)} />;
 }
 
 function Chip({ label }: { label: string }) {
@@ -378,6 +427,7 @@ const styles = StyleSheet.create({
   noPadding: { paddingHorizontal: 0 },
   scrollContent: { paddingBottom: 40 },
   header: { alignItems: "center", paddingTop: 8, paddingBottom: 16 },
+  companyName: { marginTop: 10 },
   price: { marginVertical: 2 },
   chartEmpty: { height: 232, alignItems: "center", justifyContent: "center" },
   chartControls: {
@@ -433,16 +483,17 @@ const styles = StyleSheet.create({
   card: { padding: 16, borderRadius: 14, borderWidth: 1 },
   aiCard: { borderWidth: 1.5 },
   aiSectionHeadingRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 20, marginBottom: 12 },
-  sampleBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginLeft: 4 },
   consensusBar: { flexDirection: "row", height: 8, borderRadius: 4, overflow: "hidden", marginBottom: 10 },
   consensusSegment: { height: "100%" },
   consensusLabel: { marginBottom: 6 },
   attribution: { marginTop: 4 },
   aiSummary: { lineHeight: 21 },
+  aiCta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
   comingSoon: { paddingVertical: 60, alignItems: "center", gap: 10 },
   comingSoonText: { textAlign: "center" },
   newsCard: { flexDirection: "row", borderRadius: 14, borderWidth: 1, marginBottom: 12, overflow: "hidden" },
   newsImage: { width: 88, height: 76 },
+  newsImageFallback: { alignItems: "center", justifyContent: "center" },
   newsText: { flex: 1, padding: 12, justifyContent: "center" },
   newsSource: { marginTop: 6 },
 });

@@ -22,7 +22,8 @@ const preferenceRows: { icon: keyof typeof Ionicons.glyphMap; label: string; val
   { icon: "cash-outline", label: "Currency", value: "USD" },
 ];
 
-const supportRows: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+const supportRows: { icon: keyof typeof Ionicons.glyphMap; label: string; route?: string }[] = [
+  { icon: "school-outline", label: "Learn", route: "/learn" },
   { icon: "help-circle-outline", label: "Help & Support" },
   { icon: "document-text-outline", label: "Terms, Privacy & Disclaimers" },
   { icon: "information-circle-outline", label: "About Summit" },
@@ -74,8 +75,9 @@ export default function AccountScreen() {
           {supportRows.map((row, i) => (
             <ListRow
               key={row.label}
-              {...row}
-              onPress={notify}
+              icon={row.icon}
+              label={row.label}
+              onPress={() => (row.route ? router.push(row.route) : notify())}
               colors={colors}
               last={i === supportRows.length - 1}
             />

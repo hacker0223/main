@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import type { StockQuote } from "@summit/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { CompanyLogo } from "./CompanyLogo";
 import { PriceChange } from "./PriceChange";
 import { typography } from "../theme/typography";
 import { useTheme } from "../theme/useTheme";
@@ -16,11 +17,14 @@ export function StockRow({ quote }: { quote: StockQuote }) {
         { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
       ]}
     >
-      <View>
-        <Text style={[typography.cardTitle, { color: colors.text }]}>{quote.symbol}</Text>
-        <Text style={[typography.micro, styles.name, { color: colors.textMuted }]} numberOfLines={1}>
-          {quote.companyName}
-        </Text>
+      <View style={styles.leftGroup}>
+        <CompanyLogo symbol={quote.symbol} logoUrl={quote.logoUrl} size={34} />
+        <View>
+          <Text style={[typography.cardTitle, { color: colors.text }]}>{quote.symbol}</Text>
+          <Text style={[typography.micro, styles.name, { color: colors.textMuted }]} numberOfLines={1}>
+            {quote.companyName}
+          </Text>
+        </View>
       </View>
       <View style={styles.priceCol}>
         <Text style={[typography.cardTitle, { color: colors.text }]}>${quote.price.toFixed(2)}</Text>
@@ -40,6 +44,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
   },
-  name: { marginTop: 3, maxWidth: 180 },
+  leftGroup: { flexDirection: "row", alignItems: "center", gap: 12, flexShrink: 1 },
+  name: { marginTop: 3, maxWidth: 160 },
   priceCol: { alignItems: "flex-end" },
 });

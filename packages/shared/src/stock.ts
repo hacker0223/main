@@ -62,3 +62,31 @@ export interface StockSearchResult {
   companyName: string;
   type: string;
 }
+
+export interface FinancialLineItem {
+  label: string;
+  value: number;
+}
+
+export interface FundamentalsData {
+  form: string;
+  fiscalYear: number;
+  periodEnd: string;
+  filedDate: string;
+  incomeStatement: FinancialLineItem[];
+  balanceSheet: FinancialLineItem[];
+}
+
+export interface InsiderTransaction {
+  name: string;
+  shares: number;
+  change: number;
+  transactionDate: string;
+  transactionCode: string;
+}
+
+export interface Filing {
+  form: string;
+  filedDate: string;
+  url: string;
+}
