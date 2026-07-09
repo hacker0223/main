@@ -15,6 +15,7 @@ import { AIInsightsTab } from "../../src/features/stock-detail/AIInsightsTab";
 import { FilingsTab } from "../../src/features/stock-detail/FilingsTab";
 import { formatCompactNumber, formatPercent, formatRatio } from "../../src/features/stock-detail/format";
 import { FundamentalsTab } from "../../src/features/stock-detail/FundamentalsTab";
+import { PatternSignalCard } from "../../src/features/stock-detail/PatternSignalCard";
 import { TechnicalsTab } from "../../src/features/stock-detail/TechnicalsTab";
 import { useChart } from "../../src/hooks/useChart";
 import { useNews } from "../../src/hooks/useNews";
@@ -287,6 +288,8 @@ function OverviewTab({
 
   return (
     <View>
+      <PatternSignalCard symbol={detail.quote.symbol} />
+
       <SectionHeading title="Key stats" />
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 8 }]}>
         <StatGrid

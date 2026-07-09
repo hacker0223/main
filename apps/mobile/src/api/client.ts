@@ -148,8 +148,12 @@ export interface AnalogsResponse {
   narrationError: string | null;
 }
 
-export function fetchAnalogs(closes: number[], volumes?: number[]): Promise<AnalogsResponse> {
-  return apiPost("/api/pattern-lab/analogs", { closes, volumes, topK: 20 });
+export function fetchAnalogs(
+  closes: number[],
+  volumes?: number[],
+  opts?: { narrate?: boolean }
+): Promise<AnalogsResponse> {
+  return apiPost("/api/pattern-lab/analogs", { closes, volumes, topK: 20, narrate: opts?.narrate });
 }
 
 export interface ClassifyHorizonResult {
@@ -165,8 +169,12 @@ export interface ClassifyResponse {
   narrationError: string | null;
 }
 
-export function fetchClassification(closes: number[], volumes?: number[]): Promise<ClassifyResponse> {
-  return apiPost("/api/pattern-lab/classify", { closes, volumes });
+export function fetchClassification(
+  closes: number[],
+  volumes?: number[],
+  opts?: { narrate?: boolean }
+): Promise<ClassifyResponse> {
+  return apiPost("/api/pattern-lab/classify", { closes, volumes, narrate: opts?.narrate });
 }
 
 export interface DevilsAdvocateResponse {

@@ -24,6 +24,12 @@ interface AnalogRequestBody {
   closes: number[];
   volumes?: number[];
   topK?: number;
+  // Defaults to true (Pattern Lab's existing behavior). The stock detail
+  // page's auto-loading summary card passes narrate: false so browsing to
+  // any stock doesn't fire an Anthropic call on every page view — it just
+  // wants the real computed numbers, fast, and lets the user opt into the
+  // full written explanation from Pattern Lab itself.
+  narrate?: boolean;
 }
 
 // Feature 1: historical analog matches + real outcome distribution + AI
@@ -40,7 +46,7 @@ patternLabRouter.post("/analogs", async (req, res) => {
 
     let narration: string | null = null;
     let narrationError: string | null = null;
-    if (matchResult.matches.length > 0) {
+    if (body.narrate !== false && matchResult.matches.length > 0) {
       try {
         narration = await narrateMatches({
           queryDescription: `${body.closes.length}-day window`,
@@ -78,14 +84,16 @@ patternLabRouter.post("/classify", async (req, res) => {
 
     let narration: string | null = null;
     let narrationError: string | null = null;
-    try {
-      narration = await narrateClassification(classification);
-    } catch (err) {
-      // Same reasoning as /analogs above: the classifier's real computed
-      // probabilities are already valid on their own — don't discard them
-      // because narration specifically failed.
-      narrationError = err instanceof Error ? err.message : String(err);
-      console.error(`[pattern-lab:classify] narration failed: ${narrationError}`);
+    if (body.narrate !== false) {
+      try {
+        narration = await narrateClassification(classification);
+      } catch (err) {
+        // Same reasoning as /analogs above: the classifier's real computed
+        // probabilities are already valid on their own — don't discard them
+        // because narration specifically failed.
+        narrationError = err instanceof Error ? err.message : String(err);
+        console.error(`[pattern-lab:classify] narration failed: ${narrationError}`);
+      }
     }
 
     res.json({ ...classification, narration, narrationError });
