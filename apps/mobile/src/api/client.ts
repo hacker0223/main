@@ -37,6 +37,38 @@ async function apiGet<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function apiPost<T>(path: string, body: unknown, timeoutMs = 25_000): Promise<T> {
+  if (!API_URL) {
+    throw new Error("Can't reach the server — app isn't configured with a backend URL.");
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("That took too long to load. Check your connection and try again.");
+    }
+    throw new Error("Can't reach the server. Check your connection and try again.");
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!res.ok) {
+    const responseBody = await res.json().catch(() => ({}));
+    throw new Error(responseBody.error || `Request failed: ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export function fetchStockDetail(symbol: string): Promise<StockDetail> {
   return apiGet(`/api/stocks/${encodeURIComponent(symbol)}`);
 }
@@ -85,4 +117,66 @@ export interface ScreenerEntry {
 
 export function fetchScreener(kind: "gainers" | "losers" | "52w-highs"): Promise<ScreenerEntry[]> {
   return apiGet(`/api/stocks/screeners/${kind}`);
+}
+
+// --- Pattern Lab ---------------------------------------------------------
+
+export interface PatternMatch {
+  ticker: string;
+  start_date: string;
+  end_date: string;
+  shape: number[];
+  cosine_score: number;
+  dtw_distance: number;
+  outcome: { fwd_return_5d: number | null; fwd_return_10d: number | null; fwd_return_20d: number | null };
+}
+
+export interface OutcomeDistribution {
+  count: number;
+  up: number;
+  down: number;
+  flat: number;
+  avg_up_return: number | null;
+  avg_down_return: number | null;
+  avg_flat_return?: number | null;
+}
+
+export interface AnalogsResponse {
+  matches: PatternMatch[];
+  distributions: Record<string, OutcomeDistribution>;
+  narration: string | null;
+  narrationError: string | null;
+}
+
+export function fetchAnalogs(closes: number[], volumes?: number[]): Promise<AnalogsResponse> {
+  return apiPost("/api/pattern-lab/analogs", { closes, volumes, topK: 20 });
+}
+
+export interface ClassifyHorizonResult {
+  probabilities: Record<string, number>;
+  backtested_accuracy: number;
+}
+
+export interface ClassifyResponse {
+  horizons: Record<string, ClassifyHorizonResult>;
+  insufficient_lookback_warning: boolean;
+  note: string;
+  narration: string | null;
+  narrationError: string | null;
+}
+
+export function fetchClassification(closes: number[], volumes?: number[]): Promise<ClassifyResponse> {
+  return apiPost("/api/pattern-lab/classify", { closes, volumes });
+}
+
+export interface DevilsAdvocateResponse {
+  yourThesis: string;
+  devilsAdvocate: string;
+}
+
+export function fetchDevilsAdvocate(
+  chartDescription: string,
+  userThesis: string
+): Promise<DevilsAdvocateResponse> {
+  return apiPost("/api/pattern-lab/devils-advocate", { chartDescription, userThesis });
 }

@@ -61,6 +61,22 @@ export default function LearnScreen() {
               Line up to 4 tickers side by side.
             </Text>
           </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/pattern-lab")}
+            style={({ pressed }) => [
+              styles.toolCard,
+              { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <View style={[styles.toolIcon, { backgroundColor: colors.primary }]}>
+              <Ionicons name="git-network-outline" size={18} color={colors.onPrimary} />
+            </View>
+            <Text style={[typography.cardTitle, { color: colors.text }]}>Pattern Lab</Text>
+            <Text style={[typography.caption, styles.toolSummary, { color: colors.textMuted }]} numberOfLines={2}>
+              Find real historical analogs and a backtested probability estimate.
+            </Text>
+          </Pressable>
         </View>
 
         <SectionHeading title="Articles" />
@@ -114,8 +130,8 @@ export default function LearnScreen() {
 
 const styles = StyleSheet.create({
   scroll: { paddingBottom: 32 },
-  toolsRow: { flexDirection: "row", gap: 10, marginBottom: 24 },
-  toolCard: { flex: 1, padding: 14, borderRadius: 14, borderWidth: 1.5 },
+  toolsRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 },
+  toolCard: { flexGrow: 1, flexBasis: "45%", padding: 14, borderRadius: 14, borderWidth: 1.5 },
   toolIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   toolSummary: { marginTop: 3, lineHeight: 16 },
   articleCard: {

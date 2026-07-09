@@ -4,17 +4,20 @@ import { typography } from "../../../theme/typography";
 import { useTheme } from "../../../theme/useTheme";
 
 // Deliberately has no close/dismiss control — this banner is a permanent
-// fixture of the sandbox screen, not a one-time toast. It's the same on
-// first view as it is on the hundredth.
-export function Disclaimer() {
+// fixture wherever it's used, not a one-time toast. It's the same on first
+// view as it is on the hundredth. Shared with Pattern Lab (pattern-lab
+// screens pass their own message; sandbox keeps the default).
+export function Disclaimer({
+  message = "Educational pattern recognition only. Not financial advice. Not a prediction.",
+}: {
+  message?: string;
+}) {
   const { colors } = useTheme();
 
   return (
     <View style={[styles.wrap, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}>
       <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
-      <Text style={[typography.micro, styles.text, { color: colors.textMuted }]}>
-        Educational pattern recognition only. Not financial advice. Not a prediction.
-      </Text>
+      <Text style={[typography.micro, styles.text, { color: colors.textMuted }]}>{message}</Text>
     </View>
   );
 }

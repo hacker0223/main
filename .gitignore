@@ -21,6 +21,18 @@ dist/
 build/
 *.tsbuildinfo
 
+# Python (apps/pattern-engine)
+.venv/
+__pycache__/
+*.pyc
+# Regeneratable via ingest_yahoo.py — an unofficial data source, not meant
+# to be redistributed via the repo. Trained model artifacts likewise
+# regenerate via train_model.py and can grow large across retrains — not
+# meant for git history.
+apps/pattern-engine/data/*.parquet
+apps/pattern-engine/models/*.pkl
+apps/pattern-engine/models/manifest_v1_*.json
+
 # OS
 .DS_Store
 Thumbs.db
