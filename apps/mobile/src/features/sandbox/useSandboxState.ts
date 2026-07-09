@@ -130,6 +130,11 @@ export function useSandboxState() {
       const next = [...prev.slice(0, index + 1), newCandle, ...prev.slice(index + 1)];
       return next;
     });
+    // The view window doesn't track candle count on its own, so a candle
+    // added at (or past) the current right edge would otherwise land just
+    // outside viewRange and never actually appear — "Add candle" looking
+    // like it does nothing.
+    setViewRange((prev) => (index + 1 >= prev.end ? { start: prev.start, end: prev.end + 1 } : prev));
   }, []);
 
   const selectCandle = useCallback((index: number | null) => {

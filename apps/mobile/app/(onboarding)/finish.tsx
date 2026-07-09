@@ -44,8 +44,11 @@ export default function FinishScreen() {
           {acknowledged ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
         </View>
         <Text style={[typography.caption, styles.disclaimerText, { color: colors.text }]}>
-          I understand Summit provides general market data and analytics for informational
-          purposes only — not personalized financial advice.
+          I understand Summit provides general market data, education, and analytics for
+          informational purposes only — not personalized financial advice, and not a
+          recommendation to buy, sell, or hold any security. Summit is not a registered
+          investment adviser or broker-dealer, is not responsible for any trading or
+          investment outcome, and every investment decision I make is my own.
         </Text>
       </Pressable>
 

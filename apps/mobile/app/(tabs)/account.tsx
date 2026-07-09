@@ -86,8 +86,11 @@ export default function AccountScreen() {
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[typography.micro, styles.disclaimer, { color: colors.textMuted }]}>
-            Not financial advice. For informational purposes only. Summit is not a registered
-            investment adviser.
+            Not financial advice. For informational and educational purposes only. Summit is
+            not a registered investment adviser or broker-dealer and does not execute trades.
+            Summit is not responsible for any trading or investment outcome — every investment
+            decision is yours alone, and you should do your own research or consult a licensed
+            professional before acting on anything in this app.
           </Text>
         </View>
 

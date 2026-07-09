@@ -134,50 +134,56 @@ export function SandboxChart({
     setDragLine(null);
   };
 
-  const backgroundResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => editable && selectedCandleIndex === null,
-      // Once granted (touch-down on the chart), don't let the parent
-      // ScrollView reclaim the gesture mid-drag — trendlines routinely move
-      // vertically as much as horizontally, which is exactly the motion a
-      // vertical ScrollView tries to intercept.
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: (evt) => {
-        const { locationX, locationY } = evt.nativeEvent;
-        grantRef.current = { x: locationX, y: locationY, lastDx: 0 };
-        if (drawMode) {
-          setDragLine({ from: { x: locationX, y: locationY }, to: { x: locationX, y: locationY } });
-        }
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        if (drawMode) {
-          const { x, y } = grantRef.current;
-          setDragLine({ from: { x, y }, to: { x: x + gestureState.dx, y: y + gestureState.dy } });
-          return;
-        }
-        if (slotWidth <= 0) return;
-        const deltaSinceLast = gestureState.dx - grantRef.current.lastDx;
-        const indexDelta = Math.round(-deltaSinceLast / slotWidth);
-        if (indexDelta !== 0) {
-          onPan(indexDelta);
-          grantRef.current.lastDx += indexDelta * -slotWidth;
-        }
-      },
-      onPanResponderRelease: (_evt, gestureState) => {
-        if (drawMode) {
-          const { x, y } = grantRef.current;
-          commitTrendline(x, y, x + gestureState.dx, y + gestureState.dy);
-          return;
-        }
-        const moved = Math.abs(gestureState.dx) + Math.abs(gestureState.dy);
-        if (moved < TAP_THRESHOLD && slotWidth > 0) {
-          const localIndex = Math.max(0, Math.min(visible.length - 1, Math.floor(grantRef.current.x / slotWidth)));
-          const globalIndex = viewRange.start + localIndex;
-          onSelectCandle(globalIndex === selectedCandleIndex ? null : globalIndex);
-        }
-      },
-    })
-  ).current;
+  // Deliberately NOT wrapped in useRef: PanResponder.create's handlers close
+  // over drawMode/selectedCandleIndex/slotWidth/visible/viewRange, and a ref
+  // only evaluates its initializer once. Wrapping this in useRef froze every
+  // handler to the first render's values forever — toggling Draw mode would
+  // update the UI but the touch handlers would keep thinking drawMode was
+  // still false. Recreating it each render is cheap and keeps the closures
+  // current; RN just swaps which function the native touch stream calls
+  // next, so an in-progress gesture is never interrupted by this.
+  const backgroundResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => editable && selectedCandleIndex === null,
+    // Once granted (touch-down on the chart), don't let the parent
+    // ScrollView reclaim the gesture mid-drag — trendlines routinely move
+    // vertically as much as horizontally, which is exactly the motion a
+    // vertical ScrollView tries to intercept.
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: (evt) => {
+      const { locationX, locationY } = evt.nativeEvent;
+      grantRef.current = { x: locationX, y: locationY, lastDx: 0 };
+      if (drawMode) {
+        setDragLine({ from: { x: locationX, y: locationY }, to: { x: locationX, y: locationY } });
+      }
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (drawMode) {
+        const { x, y } = grantRef.current;
+        setDragLine({ from: { x, y }, to: { x: x + gestureState.dx, y: y + gestureState.dy } });
+        return;
+      }
+      if (slotWidth <= 0) return;
+      const deltaSinceLast = gestureState.dx - grantRef.current.lastDx;
+      const indexDelta = Math.round(-deltaSinceLast / slotWidth);
+      if (indexDelta !== 0) {
+        onPan(indexDelta);
+        grantRef.current.lastDx += indexDelta * -slotWidth;
+      }
+    },
+    onPanResponderRelease: (_evt, gestureState) => {
+      if (drawMode) {
+        const { x, y } = grantRef.current;
+        commitTrendline(x, y, x + gestureState.dx, y + gestureState.dy);
+        return;
+      }
+      const moved = Math.abs(gestureState.dx) + Math.abs(gestureState.dy);
+      if (moved < TAP_THRESHOLD && slotWidth > 0) {
+        const localIndex = Math.max(0, Math.min(visible.length - 1, Math.floor(grantRef.current.x / slotWidth)));
+        const globalIndex = viewRange.start + localIndex;
+        onSelectCandle(globalIndex === selectedCandleIndex ? null : globalIndex);
+      }
+    },
+  });
 
   return (
     <View style={styles.container} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
@@ -515,18 +521,21 @@ function Handle({ x, y, color, onDrag }: { x: number; y: number; color: string; 
   // prop) keeps the drag from jumping or jittering mid-gesture.
   const startYRef = useRef(y);
 
-  const responder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: () => {
-        startYRef.current = y;
-      },
-      onPanResponderMove: (_evt, gestureState) => {
-        onDrag(startYRef.current + gestureState.dy);
-      },
-    })
-  ).current;
+  // Not wrapped in useRef, for the same reason as backgroundResponder above:
+  // this closes over `y` and `onDrag`, both of which change (`y` every time
+  // the candle updates; `onDrag` whenever a different candle is selected,
+  // since React reuses these same four Handle slots by position). A useRef
+  // wrapper would freeze both to this component's first mount.
+  const responder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: () => {
+      startYRef.current = y;
+    },
+    onPanResponderMove: (_evt, gestureState) => {
+      onDrag(startYRef.current + gestureState.dy);
+    },
+  });
 
   return (
     <View

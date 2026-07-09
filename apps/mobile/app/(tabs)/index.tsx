@@ -13,9 +13,17 @@ import { useQuotes } from "../../src/hooks/useQuotes";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
 
+function greetingForHour(hour: number): string {
+  if (hour < 5) return "Good night";
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function HomeScreen() {
   const { colors } = useTheme();
   const quotes = useQuotes(curatedSymbols.slice(0, 4));
+  const greeting = greetingForHour(new Date().getHours());
 
   return (
     <Screen>
@@ -34,7 +42,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.header}>
-          <Text style={[typography.pageTitle, { color: colors.text }]}>Good morning</Text>
+          <Text style={[typography.pageTitle, { color: colors.text }]}>{greeting}</Text>
           <Text style={[typography.body, { color: colors.textMuted }]}>
             Here's a quick look at today's market.
           </Text>
