@@ -14,7 +14,12 @@ services:
     name: summit-api
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build --workspace=@summit/api
+    # --include=dev is required here: NODE_ENV=production (below) is applied
+    # during the build step too, and npm skips devDependencies under
+    # NODE_ENV=production by default — but typescript and the @types/*
+    # packages needed to actually run `tsc` are devDependencies. Without this
+    # flag the build fails with "could not find a declaration file" errors.
+    buildCommand: npm install --include=dev && npm run build --workspace=@summit/api
     startCommand: npm run start --workspace=@summit/api
     envVars:
       - key: NODE_ENV
