@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import type { StockQuote } from "@summit/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { CompanyLogo } from "./CompanyLogo";
@@ -6,7 +7,7 @@ import { PriceChange } from "./PriceChange";
 import { typography } from "../theme/typography";
 import { useTheme } from "../theme/useTheme";
 
-export function StockRow({ quote }: { quote: StockQuote }) {
+export function StockRow({ quote, onRemove }: { quote: StockQuote; onRemove?: () => void }) {
   const { colors } = useTheme();
 
   return (
@@ -30,6 +31,11 @@ export function StockRow({ quote }: { quote: StockQuote }) {
         <Text style={[typography.cardTitle, { color: colors.text }]}>${quote.price.toFixed(2)}</Text>
         <PriceChange change={quote.change} changePercent={quote.changePercent} />
       </View>
+      {onRemove ? (
+        <Pressable onPress={onRemove} hitSlop={10} style={styles.removeButton}>
+          <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -47,4 +53,5 @@ const styles = StyleSheet.create({
   leftGroup: { flexDirection: "row", alignItems: "center", gap: 12, flexShrink: 1 },
   name: { marginTop: 3, maxWidth: 160 },
   priceCol: { alignItems: "flex-end" },
+  removeButton: { marginLeft: 10 },
 });

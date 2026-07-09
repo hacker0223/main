@@ -12,7 +12,7 @@ export default function PortfolioScreen() {
         <EmptyState
           icon="briefcase-outline"
           title="No holdings yet"
-          description="Manually add shares, cost basis, and purchase date to start tracking your portfolio's value and performance."
+          description="Manual portfolio tracking (shares, cost basis, purchase date) is coming soon. For now, use Watchlist to keep an eye on stocks you're interested in."
           ctaLabel="Explore stocks"
           onPressCta={() => router.push("/(tabs)/discover")}
         />

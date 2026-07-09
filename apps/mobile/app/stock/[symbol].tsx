@@ -19,6 +19,7 @@ import { TechnicalsTab } from "../../src/features/stock-detail/TechnicalsTab";
 import { useChart } from "../../src/hooks/useChart";
 import { useNews } from "../../src/hooks/useNews";
 import { useStockDetail } from "../../src/hooks/useStockDetail";
+import { useWatchlistStore } from "../../src/store/watchlistStore";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
 
@@ -44,6 +45,9 @@ export default function StockDetailScreen() {
   const ticker = symbol?.toUpperCase();
   const detail = useStockDetail(ticker);
   const chart = useChart(ticker, timeframe);
+  const watchlistSymbols = useWatchlistStore((s) => s.symbols);
+  const toggleWatchlist = useWatchlistStore((s) => s.toggle);
+  const inWatchlist = !!ticker && watchlistSymbols.includes(ticker);
 
   const notify = () => Alert.alert("Coming soon", "This isn't wired up yet.");
 
@@ -143,7 +147,13 @@ export default function StockDetailScreen() {
           </View>
 
           <View style={styles.actionsRow}>
-            <ActionButton label="Watchlist" icon="eye-outline" onPress={notify} colors={colors} />
+            <ActionButton
+              label={inWatchlist ? "Watchlisted" : "Watchlist"}
+              icon={inWatchlist ? "eye" : "eye-outline"}
+              active={inWatchlist}
+              onPress={() => ticker && toggleWatchlist(ticker)}
+              colors={colors}
+            />
             <ActionButton label="Set alert" icon="notifications-outline" onPress={notify} colors={colors} />
             <ActionButton label="Portfolio" icon="add-circle-outline" onPress={notify} colors={colors} />
           </View>
@@ -225,22 +235,30 @@ function ActionButton({
   icon,
   onPress,
   colors,
+  active,
 }: {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   colors: ReturnType<typeof useTheme>["colors"];
+  active?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.actionButton,
-        { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+        {
+          backgroundColor: active ? colors.primary : colors.surface,
+          borderColor: active ? colors.primary : colors.border,
+          opacity: pressed ? 0.7 : 1,
+        },
       ]}
     >
-      <Ionicons name={icon} size={18} color={colors.primary} />
-      <Text style={[typography.micro, styles.actionLabel, { color: colors.text }]}>{label}</Text>
+      <Ionicons name={icon} size={18} color={active ? colors.onPrimary : colors.primary} />
+      <Text style={[typography.micro, styles.actionLabel, { color: active ? colors.onPrimary : colors.text }]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }

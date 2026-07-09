@@ -10,6 +10,7 @@ import { StockRowSkeleton } from "../../src/components/StockRowSkeleton";
 import { SummitWordmark } from "../../src/components/SummitWordmark";
 import { curatedSymbols } from "../../src/constants/curatedSymbols";
 import { useQuotes } from "../../src/hooks/useQuotes";
+import { useWatchlistStore } from "../../src/store/watchlistStore";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
 
@@ -24,6 +25,8 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const quotes = useQuotes(curatedSymbols.slice(0, 4));
   const greeting = greetingForHour(new Date().getHours());
+  const watchlistSymbols = useWatchlistStore((s) => s.symbols);
+  const watchlistQuotes = useQuotes(watchlistSymbols.slice(0, 3));
 
   return (
     <Screen>
@@ -48,29 +51,35 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <SectionHeading title="Portfolio" action="View all" />
+        <SectionHeading title="Portfolio" action="View all" onPressAction={() => router.push("/(tabs)/portfolio")} />
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <EmptyState
             icon="briefcase-outline"
             title="No holdings yet"
-            description="Add your first stock to see value and daily performance here."
-            ctaLabel="Add a holding"
+            description="Manual portfolio tracking is coming soon."
+            ctaLabel="View portfolio"
             onPressCta={() => router.push("/(tabs)/portfolio")}
             compact
           />
         </View>
 
-        <SectionHeading title="Watchlist" action="View all" />
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <EmptyState
-            icon="eye-outline"
-            title="Watchlist is empty"
-            description="Save stocks you're watching to see quick updates here."
-            ctaLabel="Explore stocks"
-            onPressCta={() => router.push("/(tabs)/discover")}
-            compact
-          />
-        </View>
+        <SectionHeading title="Watchlist" action="View all" onPressAction={() => router.push("/(tabs)/watchlist")} />
+        {watchlistSymbols.length === 0 ? (
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <EmptyState
+              icon="eye-outline"
+              title="Watchlist is empty"
+              description="Save stocks you're watching to see quick updates here."
+              ctaLabel="Explore stocks"
+              onPressCta={() => router.push("/(tabs)/discover")}
+              compact
+            />
+          </View>
+        ) : watchlistQuotes.loading ? (
+          <StockRowSkeleton />
+        ) : (
+          (watchlistQuotes.data ?? []).map((quote) => <StockRow key={quote.symbol} quote={quote} />)
+        )}
 
         <View style={styles.aiHeadingRow}>
           <Ionicons name="sparkles" size={15} color={colors.accent} />

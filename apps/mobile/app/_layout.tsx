@@ -3,14 +3,17 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "react-native";
 import { useOnboardingStore } from "../src/store/onboardingStore";
+import { useWatchlistStore } from "../src/store/watchlistStore";
 
 export default function RootLayout() {
   const scheme = useColorScheme();
   const hydrate = useOnboardingStore((s) => s.hydrate);
+  const hydrateWatchlist = useWatchlistStore((s) => s.hydrate);
 
   useEffect(() => {
     hydrate();
-  }, [hydrate]);
+    hydrateWatchlist();
+  }, [hydrate, hydrateWatchlist]);
 
   return (
     <>
