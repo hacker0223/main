@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "web", "--workspace=@summit/mobile", "--", "--port", "8090"],
       "port": 8090
+    },
+    {
+      "name": "mobile-expo",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start", "--workspace=@summit/mobile", "--", "--lan"],
+      "port": 8081
     }
   ]
 }

@@ -46,6 +46,14 @@ export interface SandboxChartProps {
   onAddTrendline: (from: { index: number; price: number }, to: { index: number; price: number }) => void;
   onPan: (deltaIndex: number) => void;
   editable: boolean;
+  // Called with true the instant a chart-area touch is granted, and false
+  // once it ends. On a real device, onPanResponderTerminationRequest alone
+  // isn't always enough to stop a parent ScrollView's native scroll
+  // gesture recognizer from winning a drag partway through (a simulated
+  // browser drag never exercises this — it only showed up on a physical
+  // phone) — the caller uses this to disable the parent ScrollView's
+  // scrollEnabled for the duration of the touch instead.
+  onInteractionStateChange?: (active: boolean) => void;
 }
 
 export function SandboxChart({
@@ -62,6 +70,7 @@ export function SandboxChart({
   onAddTrendline,
   onPan,
   editable,
+  onInteractionStateChange,
 }: SandboxChartProps) {
   const { colors } = useTheme();
   const [width, setWidth] = useState(0);
@@ -150,6 +159,7 @@ export function SandboxChart({
     // vertical ScrollView tries to intercept.
     onPanResponderTerminationRequest: () => false,
     onPanResponderGrant: (evt) => {
+      onInteractionStateChange?.(true);
       const { locationX, locationY } = evt.nativeEvent;
       grantRef.current = { x: locationX, y: locationY, lastDx: 0 };
       if (drawMode) {
@@ -171,6 +181,7 @@ export function SandboxChart({
       }
     },
     onPanResponderRelease: (_evt, gestureState) => {
+      onInteractionStateChange?.(false);
       if (drawMode) {
         const { x, y } = grantRef.current;
         commitTrendline(x, y, x + gestureState.dx, y + gestureState.dy);
@@ -182,6 +193,13 @@ export function SandboxChart({
         const globalIndex = viewRange.start + localIndex;
         onSelectCandle(globalIndex === selectedCandleIndex ? null : globalIndex);
       }
+    },
+    // Safety net: if something upstream still forces the responder away
+    // despite the termination request being refused, make sure the parent
+    // ScrollView doesn't stay locked forever because of it.
+    onPanResponderTerminate: () => {
+      onInteractionStateChange?.(false);
+      setDragLine(null);
     },
   });
 
@@ -306,6 +324,7 @@ export function SandboxChart({
                 priceFromY,
                 onUpdateCandle,
                 color: colors.primary,
+                onInteractionStateChange,
               })
             : null}
         </View>
@@ -484,6 +503,7 @@ function renderHandles({
   priceFromY,
   onUpdateCandle,
   color,
+  onInteractionStateChange,
 }: {
   globalIndex: number;
   candle: SandboxCandle;
@@ -493,6 +513,7 @@ function renderHandles({
   priceFromY: (y: number) => number;
   onUpdateCandle: (index: number, patch: Partial<Omit<SandboxCandle, "time">>) => void;
   color: string;
+  onInteractionStateChange?: (active: boolean) => void;
 }) {
   const x = xAt(localIndex);
 
@@ -505,15 +526,27 @@ function renderHandles({
   // when open and close invert, same as the candle body itself already does.
   return (
     <Fragment>
-      <Handle x={x} y={priceY(candle.high)} color={color} onDrag={(y) => onUpdateCandle(globalIndex, { high: priceFromY(y) })} />
-      <Handle x={x} y={priceY(candle.open)} color={color} onDrag={(y) => onUpdateCandle(globalIndex, { open: priceFromY(y) })} />
-      <Handle x={x} y={priceY(candle.close)} color={color} onDrag={(y) => onUpdateCandle(globalIndex, { close: priceFromY(y) })} />
-      <Handle x={x} y={priceY(candle.low)} color={color} onDrag={(y) => onUpdateCandle(globalIndex, { low: priceFromY(y) })} />
+      <Handle x={x} y={priceY(candle.high)} color={color} onDrag={(y) => onUpdateCandle(globalIndex, { high: priceFromY(y) })} onInteractionStateChange={onInteractionStateChange} />
+      <Handle x={x} y={priceY(candle.open)} color={color} onDrag={(y) => onUpdateCandle(globalIndex, { open: priceFromY(y) })} onInteractionStateChange={onInteractionStateChange} />
+      <Handle x={x} y={priceY(candle.close)} color={color} onDrag={(y) => onUpdateCandle(globalIndex, { close: priceFromY(y) })} onInteractionStateChange={onInteractionStateChange} />
+      <Handle x={x} y={priceY(candle.low)} color={color} onDrag={(y) => onUpdateCandle(globalIndex, { low: priceFromY(y) })} onInteractionStateChange={onInteractionStateChange} />
     </Fragment>
   );
 }
 
-function Handle({ x, y, color, onDrag }: { x: number; y: number; color: string; onDrag: (y: number) => void }) {
+function Handle({
+  x,
+  y,
+  color,
+  onDrag,
+  onInteractionStateChange,
+}: {
+  x: number;
+  y: number;
+  color: string;
+  onDrag: (y: number) => void;
+  onInteractionStateChange?: (active: boolean) => void;
+}) {
   // Capture the Y at gesture start in a plain ref, not the `y` prop
   // directly — `y` changes on every re-render as the drag commits new
   // candle values, and PanResponder's gestureState.dy is cumulative from
@@ -530,10 +563,17 @@ function Handle({ x, y, color, onDrag }: { x: number; y: number; color: string; 
     onStartShouldSetPanResponder: () => true,
     onPanResponderTerminationRequest: () => false,
     onPanResponderGrant: () => {
+      onInteractionStateChange?.(true);
       startYRef.current = y;
     },
     onPanResponderMove: (_evt, gestureState) => {
       onDrag(startYRef.current + gestureState.dy);
+    },
+    onPanResponderRelease: () => {
+      onInteractionStateChange?.(false);
+    },
+    onPanResponderTerminate: () => {
+      onInteractionStateChange?.(false);
     },
   });
 

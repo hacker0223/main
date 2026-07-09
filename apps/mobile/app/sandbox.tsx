@@ -17,6 +17,14 @@ import { useTheme } from "../src/theme/useTheme";
 export default function SandboxScreen() {
   const { colors } = useTheme();
   const [showAnnotations, setShowAnnotations] = useState(true);
+  // While the user is actively drawing a trendline or dragging an OHLC
+  // handle, the outer ScrollView must not be allowed to scroll — on a real
+  // device its native scroll gesture recognizer can still win a touch away
+  // from the chart mid-drag (the line freezes after a tiny movement, or the
+  // whole screen swipes instead), even with the chart's own
+  // onPanResponderTerminationRequest refusing to yield. Locking scrollEnabled
+  // for the duration of the touch removes the competing gesture entirely.
+  const [chartInteractionActive, setChartInteractionActive] = useState(false);
   const s = useSandboxState();
 
   const hasEnoughData = s.effectiveCandles.length >= 15;
@@ -39,7 +47,11 @@ export default function SandboxScreen() {
           }}
         />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+          scrollEnabled={!chartInteractionActive}
+        >
           <Disclaimer />
 
           {!s.dataSource ? (
@@ -138,6 +150,7 @@ export default function SandboxScreen() {
                 onAddTrendline={s.addTrendline}
                 onPan={s.pan}
                 editable={editable}
+                onInteractionStateChange={setChartInteractionActive}
               />
 
               <View style={styles.section}>
