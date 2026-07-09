@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: summit-pattern-engine
+    runtime: python
+    plan: free
+    rootDir: apps/pattern-engine
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+
+  - type: web
+    name: summit-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build --workspace=@summit/api
+    startCommand: npm run start --workspace=@summit/api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FINNHUB_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PATTERN_ENGINE_URL
+        sync: false # set manually after the pattern-engine service is up —
+                    # its public URL, e.g. https://summit-pattern-engine.onrender.com
