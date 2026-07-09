@@ -25,26 +25,43 @@ export default function LearnScreen() {
   return (
     <Screen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <PageTitle subtitle="Plain-English explanations for everything in the app.">Learn</PageTitle>
+        <PageTitle subtitle="Plain-English explanations, plus tools to practice with no real money on the line.">
+          Learn
+        </PageTitle>
 
-        <Pressable
-          onPress={() => router.push("/sandbox")}
-          style={({ pressed }) => [
-            styles.practiceCard,
-            { backgroundColor: colors.accentSurface, borderColor: colors.accent, opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <View style={[styles.practiceIcon, { backgroundColor: colors.accent }]}>
-            <Ionicons name="analytics-outline" size={20} color={colors.onAccent} />
-          </View>
-          <View style={{ flex: 1 }}>
+        <View style={styles.toolsRow}>
+          <Pressable
+            onPress={() => router.push("/sandbox")}
+            style={({ pressed }) => [
+              styles.toolCard,
+              { backgroundColor: colors.accentSurface, borderColor: colors.accent, opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <View style={[styles.toolIcon, { backgroundColor: colors.accent }]}>
+              <Ionicons name="analytics-outline" size={18} color={colors.onAccent} />
+            </View>
             <Text style={[typography.cardTitle, { color: colors.text }]}>Chart Sandbox</Text>
-            <Text style={[typography.caption, styles.summary, { color: colors.textMuted }]}>
-              Draw or generate a candlestick chart, practice reading it, then get AI pattern commentary.
+            <Text style={[typography.caption, styles.toolSummary, { color: colors.textMuted }]} numberOfLines={2}>
+              Draw or generate a chart, then get AI pattern commentary.
             </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-        </Pressable>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/compare")}
+            style={({ pressed }) => [
+              styles.toolCard,
+              { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <View style={[styles.toolIcon, { backgroundColor: colors.primary }]}>
+              <Ionicons name="git-compare-outline" size={18} color={colors.onPrimary} />
+            </View>
+            <Text style={[typography.cardTitle, { color: colors.text }]}>Compare Stocks</Text>
+            <Text style={[typography.caption, styles.toolSummary, { color: colors.textMuted }]} numberOfLines={2}>
+              Line up to 4 tickers side by side.
+            </Text>
+          </Pressable>
+        </View>
 
         <SectionHeading title="Articles" />
         {articles.map((a) => (
@@ -97,16 +114,10 @@ export default function LearnScreen() {
 
 const styles = StyleSheet.create({
   scroll: { paddingBottom: 32 },
-  practiceCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    marginBottom: 24,
-  },
-  practiceIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  toolsRow: { flexDirection: "row", gap: 10, marginBottom: 24 },
+  toolCard: { flex: 1, padding: 14, borderRadius: 14, borderWidth: 1.5 },
+  toolIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  toolSummary: { marginTop: 3, lineHeight: 16 },
   articleCard: {
     flexDirection: "row",
     alignItems: "center",

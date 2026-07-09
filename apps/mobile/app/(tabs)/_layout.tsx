@@ -9,6 +9,7 @@ const tabIcons: Record<string, { active: IconName; inactive: IconName }> = {
   discover: { active: "compass", inactive: "compass-outline" },
   watchlist: { active: "eye", inactive: "eye-outline" },
   portfolio: { active: "briefcase", inactive: "briefcase-outline" },
+  learn: { active: "school", inactive: "school-outline" },
   account: { active: "person-circle", inactive: "person-circle-outline" },
 };
 
@@ -32,6 +33,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="discover" options={{ title: "Discover" }} />
       <Tabs.Screen name="watchlist" options={{ title: "Watchlist" }} />
       <Tabs.Screen name="portfolio" options={{ title: "Portfolio" }} />
+      <Tabs.Screen name="learn" options={{ title: "Learn" }} />
       <Tabs.Screen name="account" options={{ title: "Account" }} />
     </Tabs>
   );
