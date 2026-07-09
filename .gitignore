@@ -25,13 +25,12 @@ build/
 .venv/
 __pycache__/
 *.pyc
-# Regeneratable via ingest_yahoo.py — an unofficial data source, not meant
-# to be redistributed via the repo. Trained model artifacts likewise
-# regenerate via train_model.py and can grow large across retrains — not
-# meant for git history.
-apps/pattern-engine/data/*.parquet
-apps/pattern-engine/models/*.pkl
-apps/pattern-engine/models/manifest_v1_*.json
+# data/*.parquet and models/*.pkl are normally regeneratable build output
+# (via ingest_yahoo.py / train_model.py) and wouldn't belong in git. For the
+# v1 launch they're committed as-is (~10MB) so Render has something to serve
+# Pattern Lab from without running a 15-20min ingestion+training step on
+# every deploy. Swap this for a real pipeline (scheduled retrain + artifact
+# storage) post-launch rather than committing future retrains here too.
 
 # OS
 .DS_Store

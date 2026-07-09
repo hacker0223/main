@@ -1,0 +1,115 @@
+{
+  "trained_at": "2026-07-08T22:34:41.423046",
+  "data_cutoff_date": "2026-06-05",
+  "feature_keys": [
+    "rsi14",
+    "macd_hist",
+    "volume_ratio",
+    "dist_from_sma50",
+    "dist_from_sma200",
+    "total_return",
+    "volatility",
+    "max_drawdown"
+  ],
+  "results": {
+    "5d": {
+      "model_file": "model_5d_v1_20260708.pkl",
+      "accuracy": 0.39813136544104955,
+      "n_train": 182998,
+      "n_test": 46344,
+      "train_class_counts": {
+        "down": 58293,
+        "flat": 51302,
+        "up": 73403
+      },
+      "test_class_counts": {
+        "down": 15815,
+        "flat": 11761,
+        "up": 18768
+      },
+      "per_class": {
+        "down": {
+          "precision": 0.36880536270050274,
+          "recall": 0.38963009800822007,
+          "f1": 0.37893183285674753
+        },
+        "flat": {
+          "precision": 0.37342727730246605,
+          "recall": 0.44162911317064873,
+          "f1": 0.40467471756914686
+        },
+        "up": {
+          "precision": 0.45113499078018693,
+          "recall": 0.378037084398977,
+          "f1": 0.4113639657921438
+        }
+      }
+    },
+    "10d": {
+      "model_file": "model_10d_v1_20260708.pkl",
+      "accuracy": 0.3906223027792163,
+      "n_train": 182998,
+      "n_test": 46344,
+      "train_class_counts": {
+        "down": 63238,
+        "flat": 35619,
+        "up": 84141
+      },
+      "test_class_counts": {
+        "down": 17054,
+        "flat": 8495,
+        "up": 20795
+      },
+      "per_class": {
+        "down": {
+          "precision": 0.3900016832183134,
+          "recall": 0.40758766271842384,
+          "f1": 0.39860079708690543
+        },
+        "flat": {
+          "precision": 0.28488326999146824,
+          "recall": 0.4323719835197175,
+          "f1": 0.3434636244623153
+        },
+        "up": {
+          "precision": 0.4785641156897876,
+          "recall": 0.35965376292377976,
+          "f1": 0.4106745737583395
+        }
+      }
+    },
+    "20d": {
+      "model_file": "model_20d_v1_20260708.pkl",
+      "accuracy": 0.38807612635939925,
+      "n_train": 182998,
+      "n_test": 46344,
+      "train_class_counts": {
+        "down": 66468,
+        "flat": 24049,
+        "up": 92481
+      },
+      "test_class_counts": {
+        "down": 18191,
+        "flat": 5956,
+        "up": 22197
+      },
+      "per_class": {
+        "down": {
+          "precision": 0.41092806150466776,
+          "recall": 0.4113572645813864,
+          "f1": 0.4111425510288179
+        },
+        "flat": {
+          "precision": 0.20171637352366387,
+          "recall": 0.39858965748824715,
+          "f1": 0.26787023977433005
+        },
+        "up": {
+          "precision": 0.49666972196761383,
+          "recall": 0.36617560931657434,
+          "f1": 0.42155489860484413
+        }
+      }
+    }
+  }
+}
