@@ -74,6 +74,15 @@ export default function StockDetailScreen() {
 
   const notify = () => Alert.alert("Coming soon", "This isn't wired up yet.");
 
+  // Lock the page's vertical scroll while the user scrubs the price chart —
+  // imperative setNativeProps (no re-render mid-gesture), extra ?. because
+  // react-native-web's ScrollView doesn't implement setNativeProps. Same
+  // pattern as the sandbox screen.
+  const scrollViewRef = useRef<ScrollView>(null);
+  const setChartInteractionActive = (active: boolean) => {
+    scrollViewRef.current?.setNativeProps?.({ scrollEnabled: !active });
+  };
+
   return (
     <Screen style={styles.noPadding}>
       <Stack.Screen
@@ -93,7 +102,11 @@ export default function StockDetailScreen() {
       {detail.error && !detail.data ? (
         <ErrorState message={detail.error} onRetry={detail.refetch} />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          ref={scrollViewRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
           <View style={styles.header}>
             {detail.loading || !detail.data ? (
               <>
@@ -157,6 +170,8 @@ export default function StockDetailScreen() {
               points={chart.data.points}
               isPositive={chart.data.points[chart.data.points.length - 1].close >= chart.data.points[0].open}
               mode={chartMode}
+              timeframe={timeframe}
+              onInteractionStateChange={setChartInteractionActive}
             />
           )}
 
