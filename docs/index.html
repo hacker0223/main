@@ -3,21 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Summit — Legal</title>
+<title>Summit — Stock Research & Chart Practice</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 60px 20px; text-align: center; color: #0B0E14; }
-  h1 { font-size: 24px; }
-  ul { list-style: none; padding: 0; margin-top: 24px; }
-  li { margin-bottom: 12px; }
-  a { color: #2563EB; font-size: 16px; text-decoration: none; }
-  a:hover { text-decoration: underline; }
+  :root { --blue: #2563EB; --ink: #0B0E14; --muted: #6B7280; --line: #E5E7EB; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 620px; margin: 0 auto; padding: 56px 22px 80px; line-height: 1.6; color: var(--ink); }
+  header { text-align: center; margin-bottom: 44px; }
+  .logo { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+  .tagline { color: var(--muted); font-size: 17px; margin-top: 6px; }
+  h2 { font-size: 19px; margin-top: 40px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  .links { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 28px; }
+  .links a { color: var(--blue); text-decoration: none; font-size: 15px; border: 1px solid var(--line); padding: 8px 16px; border-radius: 10px; }
+  .links a:hover { border-color: var(--blue); }
+  .support { background: #F8FAFC; border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-top: 36px; }
+  .disclaimer { color: var(--muted); font-size: 13px; margin-top: 40px; border-top: 1px solid var(--line); padding-top: 20px; }
+  a.inline { color: var(--blue); }
 </style>
 </head>
 <body>
-  <h1>Summit</h1>
+  <header>
+    <div class="logo">⛰️ Summit</div>
+    <div class="tagline">Stock research and chart practice for real people.</div>
+  </header>
+
+  <p>Summit is a stock research and education app for casual investors. It brings together live quotes, fundamentals, technicals, news, and SEC filings, plus hands-on tools for learning to read the market — without ever telling you what to buy or sell.</p>
+
+  <h2>What's inside</h2>
   <ul>
-    <li><a href="privacy.html">Privacy Policy</a></li>
-    <li><a href="terms.html">Terms of Service</a></li>
+    <li><strong>Live market data</strong> — quotes, fundamentals, technicals (RSI, MACD, Bollinger), news, and SEC filings.</li>
+    <li><strong>Chart Sandbox</strong> — practice reading candlesticks and drawing trendlines, or import a real stock's history to study.</li>
+    <li><strong>Pattern Lab</strong> — see how historically similar chart shapes actually played out, with a trained model's estimate and its real backtested accuracy attached.</li>
+    <li><strong>Watchlist & price alerts</strong> — kept entirely on your own device.</li>
   </ul>
+
+  <h2>Built to inform, not to advise</h2>
+  <p>Summit doesn't execute trades, hold funds, or make buy/sell recommendations. Every statistic comes with its real measured accuracy, and nothing in the app is financial advice — it's a tool for doing your own research more clearly.</p>
+
+  <div class="support">
+    <h2 style="margin-top:0">Support</h2>
+    <p style="margin-bottom:0">Questions, bugs, or feedback? Email <a class="inline" href="mailto:nathannathan0223@gmail.com">nathannathan0223@gmail.com</a> and we'll get back to you.</p>
+  </div>
+
+  <div class="links">
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="terms.html">Terms of Service</a>
+  </div>
+
+  <p class="disclaimer">Not financial advice. For informational and educational purposes only. Summit is not a registered investment adviser or broker-dealer and does not execute trades. Market data is provided by third parties and may be delayed or inaccurate.</p>
 </body>
 </html>
