@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  searchInput: { flex: 1, height: "100%" },
+  searchInput: { flex: 1, height: "100%", minWidth: 0 },
   importStatus: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
   importStatusText: {},
   importError: { marginTop: 10 },

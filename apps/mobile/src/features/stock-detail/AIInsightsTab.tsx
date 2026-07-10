@@ -100,8 +100,9 @@ export function AIInsightsTab({ symbol, keyStats }: { symbol: string | undefined
 
       <View style={[styles.comingSoonNote, { backgroundColor: colors.surfaceRaised }]}>
         <Text style={[typography.micro, { color: colors.textMuted }]}>
-          Sentiment scoring and earnings call analysis need a language model we haven't wired in yet — coming in a
-          future pass. Everything above is real statistics, computed live, not a preview.
+          Sentiment scoring and earnings call analysis are coming in a future pass. Everything above is real
+          statistics, computed live, not a preview — and the Pattern Signal on the Overview tab adds a trained
+          model's read of the recent chart shape.
         </Text>
       </View>
     </View>

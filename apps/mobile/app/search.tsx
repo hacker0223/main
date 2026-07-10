@@ -126,7 +126,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  input: { flex: 1, height: "100%" },
+  // minWidth: 0 — on web a TextInput's intrinsic min-width otherwise stops
+  // flex from shrinking it, overflowing the clear button out of the wrap
+  // and on top of the Cancel label.
+  input: { flex: 1, height: "100%", minWidth: 0 },
   sectionLabel: { marginBottom: 10 },
   row: {
     flexDirection: "row",

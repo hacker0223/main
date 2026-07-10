@@ -132,6 +132,6 @@ const styles = StyleSheet.create({
     height: 46,
     marginBottom: 18,
   },
-  input: { flex: 1, height: "100%" },
+  input: { flex: 1, height: "100%", minWidth: 0 },
   saveButton: { paddingVertical: 14, borderRadius: 12, alignItems: "center" },
 });

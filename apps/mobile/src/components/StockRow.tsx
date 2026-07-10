@@ -20,7 +20,7 @@ export function StockRow({ quote, onRemove }: { quote: StockQuote; onRemove?: ()
     >
       <View style={styles.leftGroup}>
         <CompanyLogo symbol={quote.symbol} logoUrl={quote.logoUrl} size={34} />
-        <View>
+        <View style={styles.nameCol}>
           <Text style={[typography.cardTitle, { color: colors.text }]}>{quote.symbol}</Text>
           <Text style={[typography.micro, styles.name, { color: colors.textMuted }]} numberOfLines={1}>
             {quote.companyName}
@@ -50,8 +50,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
   },
-  leftGroup: { flexDirection: "row", alignItems: "center", gap: 12, flexShrink: 1 },
-  name: { marginTop: 3, maxWidth: 160 },
-  priceCol: { alignItems: "flex-end" },
+  // flex: 1 + minWidth: 0 (instead of a fixed name maxWidth) lets the name
+  // column ellipsize to whatever space the price column leaves — a fixed
+  // 160px cap overflowed into the prices on narrow screens.
+  leftGroup: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, minWidth: 0, marginRight: 10 },
+  nameCol: { flexShrink: 1, minWidth: 0 },
+  name: { marginTop: 3 },
+  priceCol: { alignItems: "flex-end", flexShrink: 0 },
   removeButton: { marginLeft: 10 },
 });

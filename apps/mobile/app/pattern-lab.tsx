@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
   },
-  searchInput: { flex: 1, height: "100%" },
+  searchInput: { flex: 1, height: "100%", minWidth: 0 },
   resultRow: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   symbolHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
 });

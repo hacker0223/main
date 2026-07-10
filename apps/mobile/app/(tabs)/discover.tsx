@@ -10,8 +10,11 @@ import { SectionHeading } from "../../src/components/SectionHeading";
 import { StockRow } from "../../src/components/StockRow";
 import { StockRowSkeleton } from "../../src/components/StockRowSkeleton";
 import { curatedSymbols } from "../../src/constants/curatedSymbols";
+import { suggestionsForInterests } from "../../src/constants/interestSuggestions";
 import { useQuotes } from "../../src/hooks/useQuotes";
 import { useScreener } from "../../src/hooks/useScreener";
+import { useOnboardingStore } from "../../src/store/onboardingStore";
+import { useWatchlistStore } from "../../src/store/watchlistStore";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
 
@@ -26,6 +29,14 @@ export default function DiscoverScreen() {
   const quotes = useQuotes(curatedSymbols);
   const [activeScreener, setActiveScreener] = useState<(typeof screenerTabs)[number]["key"]>("gainers");
   const screener = useScreener(activeScreener);
+
+  // The section that actually keeps onboarding's "we'll use these to
+  // suggest stocks for your watchlist" promise. Already-watchlisted
+  // symbols are excluded — a suggestion you've already taken is noise.
+  const interests = useOnboardingStore((s) => s.answers.interests);
+  const watchlistSymbols = useWatchlistStore((s) => s.symbols);
+  const suggestedSymbols = suggestionsForInterests(interests, watchlistSymbols);
+  const suggested = useQuotes(suggestedSymbols);
 
   return (
     <Screen>
@@ -110,6 +121,23 @@ export default function DiscoverScreen() {
           Screened live from a curated universe of 20 liquid stocks — full market-wide filters are coming in a
           future pass.
         </Text>
+
+        {suggestedSymbols.length > 0 ? (
+          <>
+            <SectionHeading title="Picked for your interests" />
+            {suggested.loading ? (
+              Array.from({ length: Math.min(3, suggestedSymbols.length) }).map((_, i) => (
+                <StockRowSkeleton key={i} />
+              ))
+            ) : suggested.error ? null : (
+              (suggested.data ?? []).map((quote) => <StockRow key={quote.symbol} quote={quote} />)
+            )}
+            <Text style={[typography.micro, styles.universeNote, { color: colors.textMuted }]}>
+              Based on the interests you picked during setup — a browsing starting point, not a
+              recommendation.
+            </Text>
+          </>
+        ) : null}
 
         <SectionHeading title="Popular stocks" />
         {quotes.loading

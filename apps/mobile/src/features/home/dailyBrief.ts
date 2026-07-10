@@ -12,7 +12,7 @@ export function buildDailyBrief(watchlistQuotes: StockQuote[], marketQuotes: Sto
     return "Add a stock to your watchlist to get a quick daily read on how it's moving.";
   }
 
-  const source = watchlistQuotes.length > 0 ? "your watchlist" : "today's snapshot";
+  const source = watchlistQuotes.length > 0 ? "your watchlist" : "the market snapshot";
   const up = quotes.filter((q) => q.changePercent > 0);
   const down = quotes.filter((q) => q.changePercent < 0);
   const flat = quotes.length - up.length - down.length;

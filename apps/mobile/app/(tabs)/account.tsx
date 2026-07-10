@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../src/components/Button";
 import { PageTitle } from "../../src/components/PageTitle";
 import { Screen } from "../../src/components/Screen";
@@ -22,11 +22,13 @@ const preferenceRows: { icon: keyof typeof Ionicons.glyphMap; label: string; val
   { icon: "cash-outline", label: "Currency", value: "USD" },
 ];
 
-const supportRows: { icon: keyof typeof Ionicons.glyphMap; label: string; route?: string }[] = [
+const SUPPORT_EMAIL = "nathannathan0223@gmail.com"; // same contact as docs/terms.html & docs/privacy.html
+
+const supportRows: { icon: keyof typeof Ionicons.glyphMap; label: string; route?: string; email?: boolean }[] = [
   { icon: "school-outline", label: "Learn", route: "/learn" },
-  { icon: "help-circle-outline", label: "Help & Support" },
-  { icon: "document-text-outline", label: "Terms, Privacy & Disclaimers" },
-  { icon: "information-circle-outline", label: "About Summit" },
+  { icon: "help-circle-outline", label: "Help & Support", email: true },
+  { icon: "document-text-outline", label: "Terms, Privacy & Disclaimers", route: "/legal" },
+  { icon: "information-circle-outline", label: "About Summit", route: "/about" },
 ];
 
 export default function AccountScreen() {
@@ -40,6 +42,13 @@ export default function AccountScreen() {
   };
 
   const notify = () => Alert.alert("Coming soon", "This isn't wired up yet.");
+
+  const contactSupport = () =>
+    Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Summit%20support`).catch(() =>
+      // No mail app configured (common on simulators/desktops) — still
+      // give the user the address instead of failing silently.
+      Alert.alert("Contact support", `Email us at ${SUPPORT_EMAIL}`)
+    );
 
   return (
     <Screen>
@@ -77,7 +86,7 @@ export default function AccountScreen() {
               key={row.label}
               icon={row.icon}
               label={row.label}
-              onPress={() => (row.route ? router.push(row.route) : notify())}
+              onPress={() => (row.route ? router.push(row.route) : row.email ? contactSupport() : notify())}
               colors={colors}
               last={i === supportRows.length - 1}
             />
