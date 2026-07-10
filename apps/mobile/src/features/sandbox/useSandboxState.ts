@@ -37,6 +37,9 @@ export interface ViewRange {
 
 export function useSandboxState() {
   const [dataSource, setDataSource] = useState<DataSource | null>(null);
+  // Which mock-historical series is loaded, so "New chart" can regenerate
+  // the same one instead of forcing the user to reopen the picker.
+  const [activeMockId, setActiveMockId] = useState<string | null>(null);
   const [candles, setCandles] = useState<SandboxCandle[]>([]);
   const [selectedCandleIndex, setSelectedCandleIndex] = useState<number | null>(null);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
@@ -82,6 +85,7 @@ export function useSandboxState() {
       if (!series) return;
       setCandles(series.candles);
       setDataSource("mock-historical");
+      setActiveMockId(seriesId);
       setDrawings([]);
       setSelectedCandleIndex(null);
       setReplay({ active: false, playing: false, visibleCount: series.candles.length, speedMs: 700 });
@@ -93,6 +97,7 @@ export function useSandboxState() {
 
   const reset = useCallback(() => {
     setDataSource(null);
+    setActiveMockId(null);
     setCandles([]);
     setDrawings([]);
     setSelectedCandleIndex(null);
@@ -100,6 +105,16 @@ export function useSandboxState() {
     setAnalysis({ data: null, loading: false, error: null });
     setViewRange({ start: 0, end: 0 });
   }, []);
+
+  // Regenerates a fresh chart of whatever type is currently active, without
+  // returning to the data-source picker — "New chart" should feel like a
+  // restart of the same practice session, not an exit from the tab.
+  const newChart = useCallback(() => {
+    if (dataSource === "blank") loadBlank();
+    else if (dataSource === "random") loadRandom();
+    else if (dataSource === "mock-historical" && activeMockId) loadMock(activeMockId);
+    else reset();
+  }, [dataSource, activeMockId, loadBlank, loadRandom, loadMock, reset]);
 
   const updateCandle = useCallback((index: number, patch: Partial<Omit<SandboxCandle, "time">>) => {
     setCandles((prev) => {
@@ -288,6 +303,7 @@ export function useSandboxState() {
     loadRandom,
     loadMock,
     reset,
+    newChart,
     updateCandle,
     addCandleAfter,
     selectCandle,

@@ -28,7 +28,11 @@ export function PatternSignalCard({ symbol }: { symbol: string | undefined }) {
 
       {signal.loading ? (
         <Skeleton style={{ height: 64, borderRadius: 8 }} />
-      ) : signal.error || !signal.data ? (
+      ) : signal.error ? (
+        <Text style={[typography.caption, { color: colors.textMuted }]}>
+          Signal unavailable right now — tap Full breakdown below to try the full version in Pattern Lab.
+        </Text>
+      ) : !signal.data ? (
         <Text style={[typography.caption, { color: colors.textMuted }]}>
           Not enough recent history to compute a signal for this stock yet.
         </Text>

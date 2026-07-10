@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -22,9 +22,21 @@ export default function SandboxScreen() {
   // device its native scroll gesture recognizer can still win a touch away
   // from the chart mid-drag (the line freezes after a tiny movement, or the
   // whole screen swipes instead), even with the chart's own
-  // onPanResponderTerminationRequest refusing to yield. Locking scrollEnabled
-  // for the duration of the touch removes the competing gesture entirely.
-  const [chartInteractionActive, setChartInteractionActive] = useState(false);
+  // onPanResponderTerminationRequest refusing to yield.
+  //
+  // This is set imperatively via setNativeProps, not React state — setting
+  // it as state means a re-render (and prop update round-trip to the
+  // native view) lands in the middle of the very touch it's trying to
+  // protect, which turned out to still let the drag get cut short after a
+  // small amount of movement. Imperative setNativeProps changes the native
+  // scroll view immediately, with no render in between.
+  const scrollViewRef = useRef<ScrollView>(null);
+  const setChartInteractionActive = (active: boolean) => {
+    // react-native-web's ScrollView doesn't implement setNativeProps (native
+    // iOS/Android ScrollView does) — guard it directly rather than relying
+    // on the `?.` after `.current`, which only covers the ref being unset.
+    scrollViewRef.current?.setNativeProps?.({ scrollEnabled: !active });
+  };
   const s = useSandboxState();
 
   const hasEnoughData = s.effectiveCandles.length >= 15;
@@ -48,9 +60,9 @@ export default function SandboxScreen() {
         />
 
         <ScrollView
+          ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
-          scrollEnabled={!chartInteractionActive}
         >
           <Disclaimer />
 
@@ -98,9 +110,9 @@ export default function SandboxScreen() {
                   label="New chart"
                   active={false}
                   onPress={() =>
-                    Alert.alert("Start a new chart?", "This clears the current candles and drawings.", [
+                    Alert.alert("Start a new chart?", "This resets back to the start of this same chart.", [
                       { text: "Cancel", style: "cancel" },
-                      { text: "Start new", style: "destructive", onPress: s.reset },
+                      { text: "Start new", style: "destructive", onPress: s.newChart },
                     ])
                   }
                   colors={colors}

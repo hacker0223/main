@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
-import Svg, { Circle, Line as SvgLine, Polyline, Rect } from "react-native-svg";
+import Svg, { Circle, Line as SvgLine, Polyline, Rect, Text as SvgText } from "react-native-svg";
 import type { AnalysisResult, Drawing, IndicatorKey, SandboxCandle } from "../types";
 import {
   calculateBollingerSeries,
@@ -25,6 +25,8 @@ const VOLUME_HEIGHT = 46;
 const SUB_PANEL_HEIGHT = 70;
 const GAP = 8;
 const TAP_THRESHOLD = 6;
+const PRICE_LABEL_GUTTER = 46; // reserved on the right edge for $ price labels
+const PRICE_LABEL_COUNT = 5; // evenly spaced across the visible price range
 
 const INDICATOR_LINE_COLORS: Record<string, string> = {
   sma20: "#2563EB",
@@ -110,7 +112,11 @@ export function SandboxChart({
   const priceY = (price: number) => PRICE_HEIGHT - ((price - priceBounds.min) / priceRange) * PRICE_HEIGHT;
   const priceFromY = (y: number) => priceBounds.max - (y / PRICE_HEIGHT) * priceRange;
 
-  const slotWidth = width / (visible.length || 1);
+  // Candles only occupy the width minus a reserved gutter on the right for
+  // price labels — touch/tap coordinate math below uses this same
+  // (reduced) slotWidth, so the gutter doesn't throw off candle selection.
+  const chartAreaWidth = Math.max(0, width - PRICE_LABEL_GUTTER);
+  const slotWidth = chartAreaWidth / (visible.length || 1);
   const candleWidth = Math.max(2, Math.min(10, slotWidth * 0.6));
   const xAt = (localIndex: number) => localIndex * slotWidth + slotWidth / 2;
 
@@ -143,65 +149,112 @@ export function SandboxChart({
     setDragLine(null);
   };
 
-  // Deliberately NOT wrapped in useRef: PanResponder.create's handlers close
-  // over drawMode/selectedCandleIndex/slotWidth/visible/viewRange, and a ref
-  // only evaluates its initializer once. Wrapping this in useRef froze every
-  // handler to the first render's values forever — toggling Draw mode would
-  // update the UI but the touch handlers would keep thinking drawMode was
-  // still false. Recreating it each render is cheap and keeps the closures
-  // current; RN just swaps which function the native touch stream calls
-  // next, so an in-progress gesture is never interrupted by this.
-  const backgroundResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => editable && selectedCandleIndex === null,
-    // Once granted (touch-down on the chart), don't let the parent
-    // ScrollView reclaim the gesture mid-drag — trendlines routinely move
-    // vertically as much as horizontally, which is exactly the motion a
-    // vertical ScrollView tries to intercept.
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderGrant: (evt) => {
-      onInteractionStateChange?.(true);
-      const { locationX, locationY } = evt.nativeEvent;
-      grantRef.current = { x: locationX, y: locationY, lastDx: 0 };
-      if (drawMode) {
-        setDragLine({ from: { x: locationX, y: locationY }, to: { x: locationX, y: locationY } });
-      }
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      if (drawMode) {
-        const { x, y } = grantRef.current;
-        setDragLine({ from: { x, y }, to: { x: x + gestureState.dx, y: y + gestureState.dy } });
-        return;
-      }
-      if (slotWidth <= 0) return;
-      const deltaSinceLast = gestureState.dx - grantRef.current.lastDx;
-      const indexDelta = Math.round(-deltaSinceLast / slotWidth);
-      if (indexDelta !== 0) {
-        onPan(indexDelta);
-        grantRef.current.lastDx += indexDelta * -slotWidth;
-      }
-    },
-    onPanResponderRelease: (_evt, gestureState) => {
-      onInteractionStateChange?.(false);
-      if (drawMode) {
-        const { x, y } = grantRef.current;
-        commitTrendline(x, y, x + gestureState.dx, y + gestureState.dy);
-        return;
-      }
-      const moved = Math.abs(gestureState.dx) + Math.abs(gestureState.dy);
-      if (moved < TAP_THRESHOLD && slotWidth > 0) {
-        const localIndex = Math.max(0, Math.min(visible.length - 1, Math.floor(grantRef.current.x / slotWidth)));
-        const globalIndex = viewRange.start + localIndex;
-        onSelectCandle(globalIndex === selectedCandleIndex ? null : globalIndex);
-      }
-    },
-    // Safety net: if something upstream still forces the responder away
-    // despite the termination request being refused, make sure the parent
-    // ScrollView doesn't stay locked forever because of it.
-    onPanResponderTerminate: () => {
-      onInteractionStateChange?.(false);
-      setDragLine(null);
-    },
+  // Everything the responder's handlers need, kept fresh in a ref instead
+  // of a render-scoped closure. This is what actually fixes a real-device
+  // bug where a drawn trendline stopped extending after ~1cm: the
+  // PanResponder used to be recreated via PanResponder.create(...) on every
+  // render (to dodge stale closures), but each new instance carries its own
+  // fresh internal gesture-tracking state (x0/y0/dx/dy). The very first
+  // onPanResponderGrant call sets state to draw the in-progress line, which
+  // triggers a re-render — swapping in a brand-new responder instance mid-
+  // touch whose internal gesture-state was never initialized by ITS OWN
+  // grant call, corrupting the dx/dy math for every move after the first.
+  // Creating the responder exactly once (below) and reading current values
+  // through this ref keeps both the responder identity and its internal
+  // gesture tracking intact for the full duration of a touch, while still
+  // seeing up-to-date props/state.
+  const latestRef = useRef({
+    editable,
+    selectedCandleIndex,
+    drawMode,
+    slotWidth,
+    visible,
+    viewRange,
+    onPan,
+    onSelectCandle,
+    onInteractionStateChange,
+    commitTrendline,
   });
+  latestRef.current = {
+    editable,
+    selectedCandleIndex,
+    drawMode,
+    slotWidth,
+    visible,
+    viewRange,
+    onPan,
+    onSelectCandle,
+    onInteractionStateChange,
+    commitTrendline,
+  };
+
+  const backgroundResponderRef = useRef<ReturnType<typeof PanResponder.create> | null>(null);
+  if (!backgroundResponderRef.current) {
+    backgroundResponderRef.current = PanResponder.create({
+      onStartShouldSetPanResponder: () =>
+        latestRef.current.editable && latestRef.current.selectedCandleIndex === null,
+      // Once granted (touch-down on the chart), don't let the parent
+      // ScrollView reclaim the gesture mid-drag — trendlines routinely move
+      // vertically as much as horizontally, which is exactly the motion a
+      // vertical ScrollView tries to intercept.
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (evt) => {
+        latestRef.current.onInteractionStateChange?.(true);
+        const { locationX, locationY } = evt.nativeEvent;
+        grantRef.current = { x: locationX, y: locationY, lastDx: 0 };
+        if (latestRef.current.drawMode) {
+          setDragLine({ from: { x: locationX, y: locationY }, to: { x: locationX, y: locationY } });
+        }
+      },
+      onPanResponderMove: (_evt, gestureState) => {
+        const { drawMode, slotWidth, onPan } = latestRef.current;
+        if (drawMode) {
+          const { x, y } = grantRef.current;
+          setDragLine({ from: { x, y }, to: { x: x + gestureState.dx, y: y + gestureState.dy } });
+          return;
+        }
+        if (slotWidth <= 0) return;
+        const deltaSinceLast = gestureState.dx - grantRef.current.lastDx;
+        const indexDelta = Math.round(-deltaSinceLast / slotWidth);
+        if (indexDelta !== 0) {
+          onPan(indexDelta);
+          grantRef.current.lastDx += indexDelta * -slotWidth;
+        }
+      },
+      onPanResponderRelease: (_evt, gestureState) => {
+        const {
+          drawMode,
+          visible,
+          viewRange,
+          slotWidth,
+          selectedCandleIndex,
+          onSelectCandle,
+          onInteractionStateChange,
+          commitTrendline,
+        } = latestRef.current;
+        onInteractionStateChange?.(false);
+        if (drawMode) {
+          const { x, y } = grantRef.current;
+          commitTrendline(x, y, x + gestureState.dx, y + gestureState.dy);
+          return;
+        }
+        const moved = Math.abs(gestureState.dx) + Math.abs(gestureState.dy);
+        if (moved < TAP_THRESHOLD && slotWidth > 0) {
+          const localIndex = Math.max(0, Math.min(visible.length - 1, Math.floor(grantRef.current.x / slotWidth)));
+          const globalIndex = viewRange.start + localIndex;
+          onSelectCandle(globalIndex === selectedCandleIndex ? null : globalIndex);
+        }
+      },
+      // Safety net: if something upstream still forces the responder away
+      // despite the termination request being refused, make sure the parent
+      // ScrollView doesn't stay locked forever because of it.
+      onPanResponderTerminate: () => {
+        latestRef.current.onInteractionStateChange?.(false);
+        setDragLine(null);
+      },
+    });
+  }
+  const backgroundResponder = backgroundResponderRef.current;
 
   return (
     <View style={styles.container} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
@@ -210,7 +263,10 @@ export function SandboxChart({
           <View {...backgroundResponder.panHandlers}>
             <Svg width={width} height={totalHeight}>
               {/* Price panel gridline */}
-              <SvgLine x1={0} y1={PRICE_HEIGHT / 2} x2={width} y2={PRICE_HEIGHT / 2} stroke={colors.border} strokeWidth={1} />
+              <SvgLine x1={0} y1={PRICE_HEIGHT / 2} x2={chartAreaWidth} y2={PRICE_HEIGHT / 2} stroke={colors.border} strokeWidth={1} />
+
+              {/* Price axis labels */}
+              {renderPriceLabels(priceBounds, priceY, chartAreaWidth, colors.textMuted)}
 
               {/* Bollinger band */}
               {selectedIndicators.has("bollinger")
@@ -281,7 +337,7 @@ export function SandboxChart({
 
               {/* AI annotation overlay — visually distinct dashed amber */}
               {showAnnotations && analysis
-                ? renderAnnotations(analysis, viewRange, visible.length, xAt, priceY, width, colors.accent)
+                ? renderAnnotations(analysis, viewRange, visible.length, xAt, priceY, chartAreaWidth, colors.accent)
                 : null}
 
               {/* Volume panel */}
@@ -304,7 +360,7 @@ export function SandboxChart({
               })}
 
               {/* RSI panel */}
-              {showRSI ? renderRSIPanel(closesAll, viewRange, xAt, rsiTop, width, colors) : null}
+              {showRSI ? renderRSIPanel(closesAll, viewRange, xAt, rsiTop, chartAreaWidth, colors) : null}
 
               {/* MACD panel */}
               {showMACD ? renderMACDPanel(closesAll, viewRange, xAt, macdTop, slotWidth, colors) : null}
@@ -373,6 +429,30 @@ function renderBollinger(
     <Fragment>
       <Polyline points={upperPts.join(" ")} fill="none" stroke={color} strokeWidth={1} opacity={0.6} />
       <Polyline points={lowerPts.join(" ")} fill="none" stroke={color} strokeWidth={1} opacity={0.6} />
+    </Fragment>
+  );
+}
+
+function renderPriceLabels(
+  priceBounds: { min: number; max: number },
+  priceY: (p: number) => number,
+  chartAreaWidth: number,
+  color: string
+) {
+  const { min, max } = priceBounds;
+  const range = max - min;
+  if (range <= 0) return null;
+  const step = range / (PRICE_LABEL_COUNT - 1);
+  return (
+    <Fragment>
+      {Array.from({ length: PRICE_LABEL_COUNT }, (_, i) => {
+        const price = min + step * i;
+        return (
+          <SvgText key={`price-label-${i}`} x={chartAreaWidth + 4} y={priceY(price) + 3} fontSize={9} fill={color}>
+            {`$${price.toFixed(2)}`}
+          </SvgText>
+        );
+      })}
     </Fragment>
   );
 }
@@ -554,28 +634,39 @@ function Handle({
   // prop) keeps the drag from jumping or jittering mid-gesture.
   const startYRef = useRef(y);
 
-  // Not wrapped in useRef, for the same reason as backgroundResponder above:
-  // this closes over `y` and `onDrag`, both of which change (`y` every time
-  // the candle updates; `onDrag` whenever a different candle is selected,
-  // since React reuses these same four Handle slots by position). A useRef
-  // wrapper would freeze both to this component's first mount.
-  const responder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderGrant: () => {
-      onInteractionStateChange?.(true);
-      startYRef.current = y;
-    },
-    onPanResponderMove: (_evt, gestureState) => {
-      onDrag(startYRef.current + gestureState.dy);
-    },
-    onPanResponderRelease: () => {
-      onInteractionStateChange?.(false);
-    },
-    onPanResponderTerminate: () => {
-      onInteractionStateChange?.(false);
-    },
-  });
+  // `y`/`onDrag` change often (`y` every time the candle updates mid-drag;
+  // `onDrag` whenever a different candle is selected, since React reuses
+  // these same four Handle slots by position) — read them through this ref
+  // rather than closing over them directly. Recreating the PanResponder
+  // itself on every render (as this used to do) swaps in a fresh instance
+  // with un-initialized internal gesture-tracking state the moment the
+  // first onPanResponderGrant/Move triggers a re-render, corrupting the
+  // drag partway through — the same class of bug fixed on the background
+  // responder above.
+  const latestRef = useRef({ y, onDrag, onInteractionStateChange });
+  latestRef.current = { y, onDrag, onInteractionStateChange };
+
+  const responderRef = useRef<ReturnType<typeof PanResponder.create> | null>(null);
+  if (!responderRef.current) {
+    responderRef.current = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: () => {
+        latestRef.current.onInteractionStateChange?.(true);
+        startYRef.current = latestRef.current.y;
+      },
+      onPanResponderMove: (_evt, gestureState) => {
+        latestRef.current.onDrag(startYRef.current + gestureState.dy);
+      },
+      onPanResponderRelease: () => {
+        latestRef.current.onInteractionStateChange?.(false);
+      },
+      onPanResponderTerminate: () => {
+        latestRef.current.onInteractionStateChange?.(false);
+      },
+    });
+  }
+  const responder = responderRef.current;
 
   return (
     <View

@@ -148,12 +148,22 @@ export interface AnalogsResponse {
   narrationError: string | null;
 }
 
+// 100s, not the default 25s: this proxies through the backend to a
+// separate Render free-tier service that can take 30-60s+ to cold-start
+// after being idle. The backend's own proxy timeout is 90s for the same
+// reason — this needs to outlast that, not race it.
+const PATTERN_LAB_TIMEOUT_MS = 100_000;
+
 export function fetchAnalogs(
   closes: number[],
   volumes?: number[],
-  opts?: { narrate?: boolean }
+  opts?: { narrate?: boolean; timeoutMs?: number }
 ): Promise<AnalogsResponse> {
-  return apiPost("/api/pattern-lab/analogs", { closes, volumes, topK: 20, narrate: opts?.narrate });
+  return apiPost(
+    "/api/pattern-lab/analogs",
+    { closes, volumes, topK: 20, narrate: opts?.narrate },
+    opts?.timeoutMs ?? PATTERN_LAB_TIMEOUT_MS
+  );
 }
 
 export interface ClassifyHorizonResult {
@@ -172,9 +182,13 @@ export interface ClassifyResponse {
 export function fetchClassification(
   closes: number[],
   volumes?: number[],
-  opts?: { narrate?: boolean }
+  opts?: { narrate?: boolean; timeoutMs?: number }
 ): Promise<ClassifyResponse> {
-  return apiPost("/api/pattern-lab/classify", { closes, volumes, narrate: opts?.narrate });
+  return apiPost(
+    "/api/pattern-lab/classify",
+    { closes, volumes, narrate: opts?.narrate },
+    opts?.timeoutMs ?? PATTERN_LAB_TIMEOUT_MS
+  );
 }
 
 export interface DevilsAdvocateResponse {
