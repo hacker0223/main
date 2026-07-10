@@ -27,34 +27,48 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from features import HORIZONS, WINDOW_LEN_DEFAULT, compute_indicators, slice_windows
-from similarity import find_matches, outcome_distribution
+from features import HORIZONS, compute_indicators
+from similarity import WindowDataset, find_matches_compact, outcome_distribution
 from train_model import FEATURE_KEYS
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 MODELS_DIR = Path(__file__).resolve().parent / "models"
+WINDOWS_FILE = DATA_DIR / "windows_v1.npz"
 
 app = FastAPI(title="Summit Pattern Engine")
 
-_window_cache: list[tuple] | None = None
+_dataset_cache: WindowDataset | None = None
 _models_cache: dict[int, tuple] | None = None  # horizon -> (model, accuracy)
 
 
-def get_all_windows() -> list[tuple]:
-    """Cached in-process; this is a batch/offline-style dataset, not
-    something that changes per-request, so recomputing it per request
-    would be wasteful. Rebuilt on service restart (i.e., after a retrain +
-    redeploy), not live.
+def get_window_dataset() -> WindowDataset:
+    """Loads the precomputed compact window dataset (data/windows_v1.npz,
+    built offline by precompute_windows.py). This replaced a per-restart
+    rebuild that read all 105 parquet files, recomputed indicators, and
+    sliced ~230k windows into Python objects on the request path — that
+    OOM-killed the worker on Render's 512MB free tier, taking the whole
+    service (including /classify) down with it. Loading one float32 matrix
+    is ~23MB resident and near-instant by comparison. Cached in-process;
+    rebuilt only on service restart.
     """
-    global _window_cache
-    if _window_cache is None:
-        all_windows = []
-        for f in sorted(DATA_DIR.glob("*.parquet")):
-            df = pd.read_parquet(f)
-            df_ind = compute_indicators(df)
-            all_windows.extend(slice_windows(df_ind, f.stem, window_len=WINDOW_LEN_DEFAULT, step=1))
-        _window_cache = all_windows
-    return _window_cache
+    global _dataset_cache
+    if _dataset_cache is None:
+        if not WINDOWS_FILE.exists():
+            raise FileNotFoundError(
+                f"Precomputed windows missing at {WINDOWS_FILE} — run precompute_windows.py."
+            )
+        npz = np.load(WINDOWS_FILE, allow_pickle=False)
+        shapes = npz["shapes"].astype(np.float32)
+        _dataset_cache = WindowDataset(
+            shapes=shapes,
+            shape_norms=np.linalg.norm(shapes, axis=1).astype(np.float32),
+            fwd=npz["fwd"].astype(np.float32),
+            end_idx=npz["end_idx"].astype(np.int32),
+            tickers=npz["tickers"],
+            start_dates=npz["start_dates"],
+            end_dates=npz["end_dates"],
+        )
+    return _dataset_cache
 
 
 def get_current_models() -> dict[int, tuple]:
@@ -148,11 +162,11 @@ def match(query: WindowQuery):
         raise HTTPException(400, "need at least 5 closes to form a query shape")
 
     shape, _feats, _insufficient = _query_features_from_closes(query.closes, query.volumes)
-    windows = get_all_windows()
-    if not windows:
+    dataset = get_window_dataset()
+    if dataset.size == 0:
         raise HTTPException(503, "no historical window data loaded")
 
-    matches = find_matches(shape, windows, top_k=query.top_k)
+    matches = find_matches_compact(shape, dataset, top_k=query.top_k)
     if not matches:
         return {"matches": [], "distributions": {}}
 

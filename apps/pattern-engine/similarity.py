@@ -32,6 +32,28 @@ DTW_BAND_RADIUS = 5
 MIN_TICKER_GAP_DAYS = 15  # candidate matches from the same ticker must be at least this far apart
 
 
+@dataclass
+class WindowDataset:
+    """Compact columnar form of the historical windows, loaded once at
+    startup from the precomputed data/windows_v1.npz. This is what keeps the
+    match path off the ~300MB+ Python-object representation that used to
+    OOM-kill the worker: shapes are one contiguous float32 matrix, not
+    230k dataclass instances each holding a Python float list.
+    """
+
+    shapes: np.ndarray  # (N, window_len) float32
+    shape_norms: np.ndarray  # (N,) float32 — precomputed once for cosine
+    fwd: np.ndarray  # (N, 3) float32 — [5d, 10d, 20d], NaN where absent
+    end_idx: np.ndarray  # (N,) int32
+    tickers: np.ndarray  # (N,) str
+    start_dates: np.ndarray  # (N,) str
+    end_dates: np.ndarray  # (N,) str
+
+    @property
+    def size(self) -> int:
+        return int(self.shapes.shape[0])
+
+
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     denom = np.linalg.norm(a) * np.linalg.norm(b)
     if denom == 0:
@@ -103,6 +125,78 @@ def find_matches(
     # candidate slip in right next to an EARLIER accepted match as soon as
     # a later, unrelated one got accepted in between. Track every accepted
     # end_idx per ticker and check distance against all of them.
+    selected: list[Match] = []
+    accepted_ends_by_ticker: dict[str, list[int]] = {}
+    for m in reranked:
+        accepted_ends = accepted_ends_by_ticker.get(m.window.ticker, [])
+        if any(abs(m.window.end_idx - e) < min_ticker_gap_days for e in accepted_ends):
+            continue
+        selected.append(m)
+        accepted_ends_by_ticker.setdefault(m.window.ticker, []).append(m.window.end_idx)
+        if len(selected) >= top_k:
+            break
+
+    return selected
+
+
+def find_matches_compact(
+    query_shape: list[float],
+    dataset: WindowDataset,
+    top_k: int = DEFAULT_TOP_K,
+    cosine_shortlist_size: int = COSINE_SHORTLIST_SIZE,
+    band_radius: int = DTW_BAND_RADIUS,
+    min_ticker_gap_days: int = MIN_TICKER_GAP_DAYS,
+) -> list[Match]:
+    """Same three-stage cosine -> DTW -> dedup pipeline as find_matches, but
+    operating on the compact columnar WindowDataset instead of a list of
+    Window objects. Stage 1's cosine pass is a single vectorized matmul over
+    the whole shapes matrix (milliseconds), and Match/Window objects are only
+    ever materialized for the ~100-window shortlist, never for all ~230k
+    windows — that's the whole point, memory-wise. Behavior is otherwise
+    identical to find_matches.
+    """
+    q = np.asarray(query_shape, dtype=np.float32)
+    q_norm = float(np.linalg.norm(q))
+    if q_norm == 0 or dataset.size == 0:
+        return []
+
+    # Stage 1: vectorized cosine over every window at once.
+    dots = dataset.shapes @ q  # (N,)
+    denom = dataset.shape_norms * q_norm
+    with np.errstate(divide="ignore", invalid="ignore"):
+        cos = np.where(denom > 0, dots / denom, 0.0)
+
+    shortlist_n = min(cosine_shortlist_size, cos.shape[0])
+    # argpartition is O(N) vs a full O(N log N) sort — we only need the top
+    # `shortlist_n`, not a fully ordered list of 230k scores.
+    top_idx = np.argpartition(-cos, shortlist_n - 1)[:shortlist_n]
+
+    # Stage 2: banded DTW re-rank, only over the shortlist. Materialize
+    # Window/Match objects here (and only here).
+    reranked: list[Match] = []
+    for i in top_idx:
+        shape_i = dataset.shapes[i]
+        dist = dtw_distance(q, shape_i, band_radius=band_radius)
+        fwd = dataset.fwd[i]
+        outcome = WindowOutcome(
+            fwd_return_5d=None if np.isnan(fwd[0]) else float(fwd[0]),
+            fwd_return_10d=None if np.isnan(fwd[1]) else float(fwd[1]),
+            fwd_return_20d=None if np.isnan(fwd[2]) else float(fwd[2]),
+        )
+        window = Window(
+            ticker=str(dataset.tickers[i]),
+            start_idx=0,  # not stored — never read on the match path
+            end_idx=int(dataset.end_idx[i]),
+            start_date=str(dataset.start_dates[i]),
+            end_date=str(dataset.end_dates[i]),
+            shape=[float(v) for v in shape_i],
+        )
+        reranked.append(
+            Match(window=window, outcome=outcome, cosine_score=float(cos[i]), dtw_distance=dist)
+        )
+    reranked.sort(key=lambda m: m.dtw_distance)
+
+    # Stage 3: greedy de-duplicated selection (identical to find_matches).
     selected: list[Match] = []
     accepted_ends_by_ticker: dict[str, list[int]] = {}
     for m in reranked:
