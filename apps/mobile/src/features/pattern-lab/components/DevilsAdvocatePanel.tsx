@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { typography } from "../../../theme/typography";
 import { useTheme } from "../../../theme/useTheme";
 import type { DevilsAdvocateResponse } from "../../../api/client";
@@ -20,7 +21,16 @@ export function DevilsAdvocatePanel({
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[typography.cardTitle, { color: colors.text }]}>Devil's Advocate</Text>
+      <View style={styles.headerRow}>
+        <Text style={[typography.cardTitle, { color: colors.text }]}>Devil's Advocate</Text>
+        {/* Always rendered (not conditional on focus) — a focus-conditional
+            dismiss button disappears the instant the TextInput blurs, which
+            can race with and swallow the very tap meant to trigger it. */}
+        <Pressable onPress={() => Keyboard.dismiss()} hitSlop={10} style={styles.doneRow}>
+          <Text style={[typography.caption, { color: colors.primary, fontWeight: "600" }]}>Done</Text>
+          <Ionicons name="chevron-down" size={13} color={colors.primary} />
+        </Pressable>
+      </View>
       <Text style={[typography.caption, styles.intro, { color: colors.textMuted }]}>
         State your read of the chart. Before you commit to it, see the strongest case for the opposite.
       </Text>
@@ -73,6 +83,8 @@ export function DevilsAdvocatePanel({
 
 const styles = StyleSheet.create({
   card: { padding: 16, borderRadius: 14, borderWidth: 1, marginBottom: 16 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  doneRow: { flexDirection: "row", alignItems: "center", gap: 2 },
   intro: { marginTop: 4, marginBottom: 12, lineHeight: 17 },
   input: { borderWidth: 1, borderRadius: 10, padding: 12, minHeight: 70, textAlignVertical: "top" },
   submitButton: { marginTop: 10, paddingVertical: 10, borderRadius: 10, alignItems: "center" },

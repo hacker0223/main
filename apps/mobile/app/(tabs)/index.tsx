@@ -9,6 +9,7 @@ import { StockRow } from "../../src/components/StockRow";
 import { StockRowSkeleton } from "../../src/components/StockRowSkeleton";
 import { SummitWordmark } from "../../src/components/SummitWordmark";
 import { curatedSymbols } from "../../src/constants/curatedSymbols";
+import { buildDailyBrief } from "../../src/features/home/dailyBrief";
 import { useQuotes } from "../../src/hooks/useQuotes";
 import { useWatchlistStore } from "../../src/store/watchlistStore";
 import { typography } from "../../src/theme/typography";
@@ -27,6 +28,7 @@ export default function HomeScreen() {
   const greeting = greetingForHour(new Date().getHours());
   const watchlistSymbols = useWatchlistStore((s) => s.symbols);
   const watchlistQuotes = useQuotes(watchlistSymbols.slice(0, 3));
+  const dailyBrief = buildDailyBrief(watchlistQuotes.data ?? [], quotes.data ?? []);
 
   return (
     <Screen>
@@ -70,17 +72,11 @@ export default function HomeScreen() {
         )}
 
         <View style={styles.aiHeadingRow}>
-          <Ionicons name="sparkles" size={15} color={colors.accent} />
-          <Text style={[typography.sectionTitle, { color: colors.text }]}>AI Daily Brief</Text>
-          <View style={[styles.sampleBadge, { backgroundColor: colors.accentSurface }]}>
-            <Text style={[typography.micro, { color: colors.accent, fontWeight: "700" }]}>COMING SOON</Text>
-          </View>
+          <Ionicons name="bar-chart-outline" size={15} color={colors.accent} />
+          <Text style={[typography.sectionTitle, { color: colors.text }]}>Daily Brief</Text>
         </View>
         <View style={[styles.card, styles.aiCard, { backgroundColor: colors.accentSurface, borderColor: colors.accent }]}>
-          <Text style={[typography.body, styles.aiText, { color: colors.text }]}>
-            A plain-English morning summary of your watchlist lands here once this is wired up — built to
-            explain what moved and why, not to nudge you into trading more.
-          </Text>
+          <Text style={[typography.body, styles.aiText, { color: colors.text }]}>{dailyBrief}</Text>
         </View>
 
         <SectionHeading title="Market snapshot" />
@@ -107,6 +103,5 @@ const styles = StyleSheet.create({
   card: { padding: 4, borderRadius: 14, borderWidth: 1, marginBottom: 20 },
   aiCard: { padding: 16, borderWidth: 1.5 },
   aiHeadingRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12, marginTop: 8 },
-  sampleBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginLeft: 4 },
   aiText: { lineHeight: 20 },
 });

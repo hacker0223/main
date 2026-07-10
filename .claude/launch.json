@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "start", "--workspace=@summit/mobile", "--", "--lan"],
       "port": 8081
+    },
+    {
+      "name": "api-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace=@summit/api"],
+      "port": 4000
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { ChartTimeframe } from "@summit/shared";
@@ -9,6 +9,7 @@ import { PriceChange } from "../../src/components/PriceChange";
 import { PriceChart, type ChartMode } from "../../src/components/PriceChart";
 import { Screen } from "../../src/components/Screen";
 import { SectionHeading } from "../../src/components/SectionHeading";
+import { SetAlertModal } from "../../src/components/SetAlertModal";
 import { Skeleton } from "../../src/components/Skeleton";
 import { StatGrid } from "../../src/components/StatGrid";
 import { AIInsightsTab } from "../../src/features/stock-detail/AIInsightsTab";
@@ -20,6 +21,7 @@ import { TechnicalsTab } from "../../src/features/stock-detail/TechnicalsTab";
 import { useChart } from "../../src/hooks/useChart";
 import { useNews } from "../../src/hooks/useNews";
 import { useStockDetail } from "../../src/hooks/useStockDetail";
+import { useAlertStore } from "../../src/store/alertStore";
 import { useWatchlistStore } from "../../src/store/watchlistStore";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
@@ -49,6 +51,26 @@ export default function StockDetailScreen() {
   const watchlistSymbols = useWatchlistStore((s) => s.symbols);
   const toggleWatchlist = useWatchlistStore((s) => s.toggle);
   const inWatchlist = !!ticker && watchlistSymbols.includes(ticker);
+
+  const alerts = useAlertStore((s) => s.alerts);
+  const addAlert = useAlertStore((s) => s.add);
+  const removeAlert = useAlertStore((s) => s.remove);
+  const checkAlertPrice = useAlertStore((s) => s.checkPrice);
+  const [alertModalVisible, setAlertModalVisible] = useState(false);
+  const symbolAlerts = ticker ? alerts.filter((a) => a.symbol === ticker) : [];
+  const activeAlerts = symbolAlerts.filter((a) => !a.triggeredAt);
+  const firedAlerts = symbolAlerts.filter((a) => a.triggeredAt);
+
+  // Checked whenever this screen has a fresh quote — there's no push/server
+  // infra behind this, so an alert only actually fires while you have the
+  // stock open (same tradeoff called out in the modal's own copy).
+  const checkedPriceRef = useRef<number | null>(null);
+  useEffect(() => {
+    const price = detail.data?.quote.price;
+    if (!ticker || price === undefined || checkedPriceRef.current === price) return;
+    checkedPriceRef.current = price;
+    checkAlertPrice(ticker, price);
+  }, [ticker, detail.data?.quote.price, checkAlertPrice]);
 
   const notify = () => Alert.alert("Coming soon", "This isn't wired up yet.");
 
@@ -155,8 +177,38 @@ export default function StockDetailScreen() {
               onPress={() => ticker && toggleWatchlist(ticker)}
               colors={colors}
             />
-            <ActionButton label="Set alert" icon="notifications-outline" onPress={notify} colors={colors} />
+            <ActionButton
+              label={activeAlerts.length > 0 ? `Alert set (${activeAlerts.length})` : "Set alert"}
+              icon={activeAlerts.length > 0 ? "notifications" : "notifications-outline"}
+              active={activeAlerts.length > 0}
+              onPress={() => setAlertModalVisible(true)}
+              colors={colors}
+            />
           </View>
+
+          {firedAlerts.map((a) => (
+            <View key={a.id} style={[styles.alertBanner, { backgroundColor: colors.accentSurface, borderColor: colors.accent }]}>
+              <Ionicons name="notifications" size={16} color={colors.accent} />
+              <Text style={[typography.caption, styles.alertBannerText, { color: colors.text }]}>
+                {ticker} crossed {a.direction} ${a.targetPrice.toFixed(2)}.
+              </Text>
+              <Pressable onPress={() => removeAlert(a.id)} hitSlop={8}>
+                <Text style={[typography.caption, { color: colors.accent, fontWeight: "700" }]}>Got it</Text>
+              </Pressable>
+            </View>
+          ))}
+
+          {activeAlerts.map((a) => (
+            <View key={a.id} style={[styles.alertBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="notifications-outline" size={16} color={colors.textMuted} />
+              <Text style={[typography.caption, styles.alertBannerText, { color: colors.textMuted }]}>
+                Watching for {ticker} to go {a.direction} ${a.targetPrice.toFixed(2)}
+              </Text>
+              <Pressable onPress={() => removeAlert(a.id)} hitSlop={8}>
+                <Ionicons name="close" size={16} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          ))}
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subTabRow}>
             {subTabs.map((tab) => {
@@ -226,6 +278,16 @@ export default function StockDetailScreen() {
           </View>
         </ScrollView>
       )}
+
+      {ticker && detail.data ? (
+        <SetAlertModal
+          visible={alertModalVisible}
+          symbol={ticker}
+          currentPrice={detail.data.quote.price}
+          onClose={() => setAlertModalVisible(false)}
+          onSave={(targetPrice, direction) => addAlert(ticker, targetPrice, direction)}
+        />
+      ) : null}
     </Screen>
   );
 }
@@ -476,6 +538,18 @@ const styles = StyleSheet.create({
   pillLabel: { fontWeight: "600" },
   pillIcon: { marginRight: 5 },
   actionsRow: { flexDirection: "row", paddingHorizontal: 20, marginTop: 20, gap: 10 },
+  alertBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  alertBannerText: { flex: 1 },
   actionButton: {
     flex: 1,
     alignItems: "center",

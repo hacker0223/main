@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { Stack, router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -27,6 +29,20 @@ export default function PatternLabScreen() {
   const lab = usePatternLab();
   const [query, setQuery] = useState("");
   const { results, loading: searching } = useStockSearch(query);
+  const { symbol: deepLinkSymbol } = useLocalSearchParams<{ symbol?: string }>();
+
+  // Arriving here from a stock's Pattern Signal card ("Full breakdown in
+  // Pattern Lab") should land already loaded for that same stock, not force
+  // the user to search for it again. Only auto-load once per deep-link
+  // value — lab.symbol changing afterward (e.g. the user picks a different
+  // ticker) shouldn't keep snapping back to this one.
+  const autoLoadedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (deepLinkSymbol && autoLoadedRef.current !== deepLinkSymbol) {
+      autoLoadedRef.current = deepLinkSymbol;
+      lab.loadTicker(deepLinkSymbol.toUpperCase());
+    }
+  }, [deepLinkSymbol, lab]);
 
   const selectTicker = (symbol: string) => {
     setQuery("");
@@ -49,7 +65,16 @@ export default function PatternLabScreen() {
         }}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
         <Disclaimer message="Historical pattern frequency and a backtested statistical estimate — not a prediction, not financial advice." />
 
         {!lab.symbol ? (
@@ -128,12 +153,14 @@ export default function PatternLabScreen() {
             )}
           </>
         )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardAvoider: { flex: 1 },
   scroll: { paddingBottom: 40 },
   searchBar: {
     flexDirection: "row",

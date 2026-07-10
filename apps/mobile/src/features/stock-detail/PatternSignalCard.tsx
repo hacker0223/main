@@ -64,7 +64,7 @@ export function PatternSignalCard({ symbol }: { symbol: string | undefined }) {
       )}
 
       <Pressable
-        onPress={() => router.push("/pattern-lab")}
+        onPress={() => router.push(symbol ? `/pattern-lab?symbol=${encodeURIComponent(symbol)}` : "/pattern-lab")}
         style={({ pressed }) => [styles.ctaRow, { opacity: pressed ? 0.7 : 1 }]}
       >
         <Text style={[typography.caption, { color: colors.accent, fontWeight: "700" }]}>
