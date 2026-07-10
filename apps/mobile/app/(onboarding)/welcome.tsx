@@ -31,7 +31,7 @@ const slides = [
   {
     emoji: "🗂️",
     title: "One dashboard for everything",
-    body: "Watchlist, portfolio, and news, all in a single clean view built for casual investors.",
+    body: "Watchlist, pattern insights, and news, all in a single clean view built for casual investors.",
   },
 ];
 

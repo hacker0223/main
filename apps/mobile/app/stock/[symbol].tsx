@@ -156,7 +156,6 @@ export default function StockDetailScreen() {
               colors={colors}
             />
             <ActionButton label="Set alert" icon="notifications-outline" onPress={notify} colors={colors} />
-            <ActionButton label="Portfolio" icon="add-circle-outline" onPress={notify} colors={colors} />
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subTabRow}>

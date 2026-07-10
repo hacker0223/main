@@ -51,18 +51,6 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <SectionHeading title="Portfolio" action="View all" onPressAction={() => router.push("/(tabs)/portfolio")} />
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <EmptyState
-            icon="briefcase-outline"
-            title="No holdings yet"
-            description="Manual portfolio tracking is coming soon."
-            ctaLabel="View portfolio"
-            onPressCta={() => router.push("/(tabs)/portfolio")}
-            compact
-          />
-        </View>
-
         <SectionHeading title="Watchlist" action="View all" onPressAction={() => router.push("/(tabs)/watchlist")} />
         {watchlistSymbols.length === 0 ? (
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -90,8 +78,8 @@ export default function HomeScreen() {
         </View>
         <View style={[styles.card, styles.aiCard, { backgroundColor: colors.accentSurface, borderColor: colors.accent }]}>
           <Text style={[typography.body, styles.aiText, { color: colors.text }]}>
-            A plain-English morning summary of your holdings and watchlist lands here once portfolio tracking
-            is wired up — built to explain what moved and why, not to nudge you into trading more.
+            A plain-English morning summary of your watchlist lands here once this is wired up — built to
+            explain what moved and why, not to nudge you into trading more.
           </Text>
         </View>
 
