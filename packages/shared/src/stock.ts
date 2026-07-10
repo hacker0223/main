@@ -7,6 +7,11 @@ export interface StockQuote {
   changePercent: number;
   afterHoursPrice?: number;
   afterHoursChangePercent?: number;
+  // "PRE" | "POST" | "CLOSED" — which extended session afterHoursPrice
+  // reflects, so the UI can label it "Pre-market" vs "After hours" instead
+  // of guessing. Absent entirely when there's no extended-hours data (e.g.
+  // during regular trading hours).
+  afterHoursSession?: string;
 }
 
 export interface StockKeyStats {

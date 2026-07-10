@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchChart } from "../../api/client";
 import { analyzeChart } from "./analyzeChart";
 import { generateRandomCandles } from "./generateRandomCandles";
 import { mockHistoricalSeries } from "./mockHistoricalData";
@@ -40,6 +41,13 @@ export function useSandboxState() {
   // Which mock-historical series is loaded, so "New chart" can regenerate
   // the same one instead of forcing the user to reopen the picker.
   const [activeMockId, setActiveMockId] = useState<string | null>(null);
+  // Same idea for an imported real stock — remembered so "New chart" can
+  // re-fetch the same symbol instead of bouncing back to the picker.
+  const [activeImportSymbol, setActiveImportSymbol] = useState<string | null>(null);
+  const [importState, setImportState] = useState<{ loading: boolean; error: string | null }>({
+    loading: false,
+    error: null,
+  });
   const [candles, setCandles] = useState<SandboxCandle[]>([]);
   const [selectedCandleIndex, setSelectedCandleIndex] = useState<number | null>(null);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
@@ -95,9 +103,49 @@ export function useSandboxState() {
     [resetViewToFull]
   );
 
+  // Loads a real stock's actual historical daily candles into the sandbox —
+  // still a read-only practice surface (drawings/edits never leave this
+  // screen, nothing here is a live position or an order), just backed by a
+  // real chart shape instead of illustrative/random data.
+  const importStock = useCallback(
+    async (symbol: string) => {
+      const ticker = symbol.toUpperCase();
+      setImportState({ loading: true, error: null });
+      try {
+        const chart = await fetchChart(ticker, "6M");
+        if (chart.points.length < 15) {
+          setImportState({ loading: false, error: `Not enough recent trading history for ${ticker}.` });
+          return;
+        }
+        const next: SandboxCandle[] = chart.points.map((p) => ({
+          time: p.timestamp,
+          open: p.open,
+          high: p.high,
+          low: p.low,
+          close: p.close,
+          volume: p.volume,
+        }));
+        setCandles(next);
+        setDataSource("imported");
+        setActiveImportSymbol(ticker);
+        setDrawings([]);
+        setSelectedCandleIndex(null);
+        setReplay({ active: false, playing: false, visibleCount: next.length, speedMs: 700 });
+        setAnalysis({ data: null, loading: false, error: null });
+        resetViewToFull(next.length);
+        setImportState({ loading: false, error: null });
+      } catch (err) {
+        setImportState({ loading: false, error: (err as Error).message });
+      }
+    },
+    [resetViewToFull]
+  );
+
   const reset = useCallback(() => {
     setDataSource(null);
     setActiveMockId(null);
+    setActiveImportSymbol(null);
+    setImportState({ loading: false, error: null });
     setCandles([]);
     setDrawings([]);
     setSelectedCandleIndex(null);
@@ -113,8 +161,9 @@ export function useSandboxState() {
     if (dataSource === "blank") loadBlank();
     else if (dataSource === "random") loadRandom();
     else if (dataSource === "mock-historical" && activeMockId) loadMock(activeMockId);
+    else if (dataSource === "imported" && activeImportSymbol) importStock(activeImportSymbol);
     else reset();
-  }, [dataSource, activeMockId, loadBlank, loadRandom, loadMock, reset]);
+  }, [dataSource, activeMockId, activeImportSymbol, loadBlank, loadRandom, loadMock, importStock, reset]);
 
   const updateCandle = useCallback((index: number, patch: Partial<Omit<SandboxCandle, "time">>) => {
     setCandles((prev) => {
@@ -290,6 +339,9 @@ export function useSandboxState() {
 
   return {
     dataSource,
+    activeImportSymbol,
+    importState,
+    importStock,
     candles,
     effectiveCandles,
     selectedCandleIndex,

@@ -111,6 +111,35 @@ export default function StockDetailScreen() {
                   ${detail.data.quote.price.toFixed(2)}
                 </Text>
                 <PriceChange change={detail.data.quote.change} changePercent={detail.data.quote.changePercent} />
+
+                {detail.data.quote.afterHoursPrice !== undefined ? (
+                  <View style={styles.afterHoursRow}>
+                    <Ionicons name="moon-outline" size={12} color={colors.textMuted} />
+                    <Text style={[typography.caption, styles.afterHoursLabel, { color: colors.textMuted }]}>
+                      {detail.data.quote.afterHoursSession === "PRE"
+                        ? "Pre-market"
+                        : detail.data.quote.afterHoursSession === "CLOSED"
+                          ? "After hours (final)"
+                          : "After hours"}
+                      :
+                    </Text>
+                    <Text style={[typography.caption, styles.afterHoursPrice, { color: colors.text }]}>
+                      ${detail.data.quote.afterHoursPrice.toFixed(2)}
+                    </Text>
+                    {detail.data.quote.afterHoursChangePercent !== undefined ? (
+                      <Text
+                        style={[
+                          typography.caption,
+                          styles.afterHoursPrice,
+                          { color: detail.data.quote.afterHoursChangePercent >= 0 ? colors.positive : colors.negative },
+                        ]}
+                      >
+                        ({detail.data.quote.afterHoursChangePercent >= 0 ? "+" : ""}
+                        {detail.data.quote.afterHoursChangePercent.toFixed(2)}%)
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
               </>
             )}
           </View>
@@ -511,6 +540,9 @@ const styles = StyleSheet.create({
   header: { alignItems: "center", paddingTop: 8, paddingBottom: 16 },
   companyName: { marginTop: 10 },
   price: { marginVertical: 2 },
+  afterHoursRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
+  afterHoursLabel: {},
+  afterHoursPrice: { fontWeight: "600" },
   chartEmpty: { height: 232, alignItems: "center", justifyContent: "center" },
   chartControls: {
     flexDirection: "row",

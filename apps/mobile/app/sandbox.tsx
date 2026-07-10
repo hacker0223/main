@@ -71,10 +71,23 @@ export default function SandboxScreen() {
               <PageTitle subtitle="Practice reading price action with no live money or real symbols involved.">
                 Chart Sandbox
               </PageTitle>
-              <DataSourceSheet onBlank={s.loadBlank} onRandom={s.loadRandom} onMock={s.loadMock} />
+              <DataSourceSheet
+                onBlank={s.loadBlank}
+                onRandom={s.loadRandom}
+                onMock={s.loadMock}
+                onImport={s.importStock}
+                importLoading={s.importState.loading}
+                importError={s.importState.error}
+              />
             </>
           ) : (
             <>
+              {s.dataSource === "imported" && s.activeImportSymbol ? (
+                <Text style={[typography.caption, styles.importedLabel, { color: colors.textMuted }]}>
+                  {s.activeImportSymbol} · last 6 months, real historical data — still just a practice surface
+                </Text>
+              ) : null}
+
               <View style={styles.toolbar}>
                 <ToolButton
                   icon="pencil-outline"
@@ -237,6 +250,7 @@ function ToolButton({
 
 const styles = StyleSheet.create({
   scroll: { paddingBottom: 40 },
+  importedLabel: { marginBottom: 10, lineHeight: 16 },
   toolbar: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 },
   toolButton: {
     flexDirection: "row",

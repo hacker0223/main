@@ -33,6 +33,12 @@ export function ClassifierPanel({
         </Pressable>
       </View>
 
+      {loading ? (
+        <Text style={[typography.caption, styles.patience, { color: colors.textMuted }]}>
+          This can take a couple of minutes if the server's been idle — please be patient.
+        </Text>
+      ) : null}
+
       {error ? <Text style={[typography.caption, { color: colors.negative }]}>{error}</Text> : null}
 
       {data ? (
@@ -96,6 +102,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   runButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, minWidth: 96, alignItems: "center" },
   warning: { marginBottom: 10, lineHeight: 16 },
+  patience: { marginBottom: 10, lineHeight: 16, fontStyle: "italic" },
   horizonBlock: { marginBottom: 14 },
   horizonHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
   probRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },

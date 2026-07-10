@@ -9,7 +9,7 @@ import {
   getStockDetail,
   searchStocks,
 } from "../services/finnhub";
-import { getChart } from "../services/chart";
+import { getChart, getExtendedHoursQuote } from "../services/chart";
 import { getFilings } from "../services/sec";
 import { NotFoundError, RateLimitedError, UpstreamTimeoutError } from "../services/errors";
 
@@ -99,6 +99,19 @@ stocksRouter.get("/:symbol", async (req, res) => {
   try {
     const detail = await getStockDetail(symbol);
     const chart = await getChart(symbol, "1D");
+
+    // Best-effort — Finnhub's quote never carries pre/post-market prices at
+    // all, so without this the header always shows a stale regular-session
+    // price outside trading hours (e.g. a stock that moved 8% after an
+    // earnings beat at 6pm would still show its flat 4pm close). A failure
+    // here shouldn't take down the whole stock page over a "nice to have."
+    const extendedHours = await getExtendedHoursQuote(symbol).catch(() => null);
+    if (extendedHours) {
+      detail.quote.afterHoursPrice = extendedHours.price;
+      detail.quote.afterHoursChangePercent = extendedHours.changePercent;
+      detail.quote.afterHoursSession = extendedHours.marketState;
+    }
+
     res.json({ ...detail, aiSummary: null, chart });
   } catch (err) {
     handleError("detail", err, res);

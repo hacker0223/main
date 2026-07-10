@@ -44,4 +44,4 @@ export interface AnalysisResult {
   generatedAt: number;
 }
 
-export type DataSource = "blank" | "random" | "mock-historical";
+export type DataSource = "blank" | "random" | "mock-historical" | "imported";

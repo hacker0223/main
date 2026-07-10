@@ -34,6 +34,12 @@ export function AnalogMatchesPanel({
         </Pressable>
       </View>
 
+      {loading ? (
+        <Text style={[typography.caption, styles.patience, { color: colors.textMuted }]}>
+          This can take a couple of minutes if the server's been idle — please be patient.
+        </Text>
+      ) : null}
+
       {error ? <Text style={[typography.caption, { color: colors.negative }]}>{error}</Text> : null}
 
       {data ? (
@@ -105,6 +111,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   runButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, minWidth: 96, alignItems: "center" },
   horizonRow: { flexDirection: "row", gap: 6, marginBottom: 10 },
+  patience: { marginBottom: 10, lineHeight: 16, fontStyle: "italic" },
   horizonPill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1 },
   narration: { marginTop: 10, lineHeight: 20 },
   narrationError: { marginTop: 10, fontStyle: "italic" },

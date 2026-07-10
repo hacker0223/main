@@ -148,11 +148,12 @@ export interface AnalogsResponse {
   narrationError: string | null;
 }
 
-// 100s, not the default 25s: this proxies through the backend to a
-// separate Render free-tier service that can take 30-60s+ to cold-start
-// after being idle. The backend's own proxy timeout is 90s for the same
-// reason — this needs to outlast that, not race it.
-const PATTERN_LAB_TIMEOUT_MS = 100_000;
+// 180s, not the default 25s: this proxies through the backend to a
+// separate Render free-tier service whose cold-start duration has been
+// measured anywhere from ~50s to ~156s. The backend's own proxy timeout is
+// 170s for the same reason — this needs to outlast that, not race it. This
+// is a stopgap for a free-tier limitation, not a real fix.
+const PATTERN_LAB_TIMEOUT_MS = 180_000;
 
 export function fetchAnalogs(
   closes: number[],

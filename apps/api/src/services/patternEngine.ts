@@ -44,15 +44,17 @@ export interface ClassifyResponse {
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   // Render's free tier spins the pattern-engine service down after ~15min
-  // idle, and cold-starting it back up can take 30-60+ seconds. A shorter
-  // timeout here would time out on every single cold start — which, with
-  // sporadic real-world traffic to a fresh backend, is most of the time,
-  // not an edge case. 90s gives real margin above the observed cold-start
-  // duration.
+  // idle. Cold-start duration measured directly against this service has
+  // been anywhere from ~50s to ~156s — 90s was cutting off real, still-
+  // succeeding requests. This is a stopgap, not a real fix: the actual fix
+  // is either upgrading the pattern-engine instance so it never spins down,
+  // or accepting that a cold visitor sometimes waits a while. 170s gives
+  // real margin above the worst cold start measured so far, while staying
+  // under the mobile client's own 180s timeout for this call.
   const res = await fetchWithTimeout(
     `${PATTERN_ENGINE_URL}${path}`,
     { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
-    90000
+    170000
   );
   if (!res.ok) {
     const text = await res.text().catch(() => "");
