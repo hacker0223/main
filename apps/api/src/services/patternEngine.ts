@@ -5,7 +5,15 @@ import { fetchWithTimeout, UpstreamTimeoutError } from "./errors";
 // in-house service instead of a third party. This file never touches the
 // Anthropic API; it only forwards computed numbers (matches, probabilities)
 // which the narration layer (anthropic.ts) later turns into text.
-const PATTERN_ENGINE_URL = process.env.PATTERN_ENGINE_URL || "http://localhost:8000";
+//
+// The fallback here is the actual deployed pattern-engine URL, not
+// localhost — render.yaml marks PATTERN_ENGINE_URL as sync: false (a
+// manual dashboard step), which was never actually set on the live
+// summit-api service. That silently fell through to localhost:8000 (dead
+// on Render, nothing listens there), failing every pattern-lab request
+// instantly. Local dev overrides this via apps/api/.env, so it's
+// unaffected by this fallback changing.
+const PATTERN_ENGINE_URL = process.env.PATTERN_ENGINE_URL || "https://summit-pattern-engine.onrender.com";
 
 export interface WindowQuery {
   closes: number[];

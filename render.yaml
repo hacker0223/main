@@ -29,5 +29,4 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: PATTERN_ENGINE_URL
-        sync: false # set manually after the pattern-engine service is up —
-                    # its public URL, e.g. https://summit-pattern-engine.onrender.com
+        value: https://summit-pattern-engine.onrender.com # confirmed live; not a secret
