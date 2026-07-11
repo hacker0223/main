@@ -15,8 +15,8 @@ export function ServerWarmingBanner() {
   if (!warming) return null;
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <SafeAreaView edges={["top"]} pointerEvents="box-none">
+    <View style={[StyleSheet.absoluteFill, styles.overlay]}>
+      <SafeAreaView edges={["top"]} style={styles.overlay}>
         <View style={[styles.banner, { backgroundColor: colors.accentSurface, borderColor: colors.accent }]}>
           <ActivityIndicator size="small" color={colors.accent} />
           <Text style={[typography.caption, styles.text, { color: colors.text }]} numberOfLines={1}>
@@ -29,6 +29,10 @@ export function ServerWarmingBanner() {
 }
 
 const styles = StyleSheet.create({
+  // box-none: the overlay lets touches pass through to the screen beneath,
+  // while the banner itself (which has no interactive children) still draws
+  // on top. Set via style, not the deprecated pointerEvents prop.
+  overlay: { pointerEvents: "box-none" },
   banner: {
     flexDirection: "row",
     alignItems: "center",
