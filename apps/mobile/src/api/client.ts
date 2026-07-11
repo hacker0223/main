@@ -8,7 +8,23 @@ import type {
   StockSearchResult,
 } from "@summit/shared";
 
+import { useServerStatus } from "../store/serverStatusStore";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
+
+// 30s, not 10s: the backend runs on a free tier that sleeps after ~15 min
+// idle and takes ~20s to cold-start. A 10s cap timed out on every first
+// request against a cold server, so a new user saw errors everywhere. The
+// warm-up ping (see warmUpBackend) means this long ceiling is rarely
+// reached in practice; it's here so a genuine cold start SUCCEEDS instead
+// of failing. A slow request means "server waking up," not "your wifi."
+const GET_TIMEOUT_MS = 30_000;
+
+// Any successful response proves the server is awake — clear the "waking
+// up" banner immediately, even if the warm-up ping hasn't returned yet.
+function markServerAwake() {
+  useServerStatus.getState().setWarming(false);
+}
 
 async function apiGet<T>(path: string): Promise<T> {
   if (!API_URL) {
@@ -16,14 +32,14 @@ async function apiGet<T>(path: string): Promise<T> {
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
+  const timer = setTimeout(() => controller.abort(), GET_TIMEOUT_MS);
 
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, { signal: controller.signal });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error("That took too long to load. Check your connection and try again.");
+      throw new Error("The server is taking longer than usual — it may be waking up. Try again in a moment.");
     }
     throw new Error("Can't reach the server. Check your connection and try again.");
   } finally {
@@ -34,6 +50,7 @@ async function apiGet<T>(path: string): Promise<T> {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Request failed: ${res.status}`);
   }
+  markServerAwake();
   return res.json() as Promise<T>;
 }
 
@@ -55,7 +72,7 @@ async function apiPost<T>(path: string, body: unknown, timeoutMs = 25_000): Prom
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error("That took too long to load. Check your connection and try again.");
+      throw new Error("The server is taking longer than usual — it may be waking up. Try again in a moment.");
     }
     throw new Error("Can't reach the server. Check your connection and try again.");
   } finally {
@@ -66,6 +83,7 @@ async function apiPost<T>(path: string, body: unknown, timeoutMs = 25_000): Prom
     const responseBody = await res.json().catch(() => ({}));
     throw new Error(responseBody.error || `Request failed: ${res.status}`);
   }
+  markServerAwake();
   return res.json() as Promise<T>;
 }
 

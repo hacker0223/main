@@ -14,6 +14,7 @@ import { useQuotes } from "../../src/hooks/useQuotes";
 import { useWatchlistStore } from "../../src/store/watchlistStore";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
+import { getMarketStatus } from "../../src/utils/marketStatus";
 
 function greetingForHour(hour: number): string {
   if (hour < 5) return "Good night";
@@ -22,10 +23,18 @@ function greetingForHour(hour: number): string {
   return "Good evening";
 }
 
+const PHASE_DOT: Record<string, "positive" | "accent" | "textMuted"> = {
+  open: "positive",
+  pre: "accent",
+  after: "accent",
+  closed: "textMuted",
+};
+
 export default function HomeScreen() {
   const { colors } = useTheme();
   const quotes = useQuotes(curatedSymbols.slice(0, 4));
   const greeting = greetingForHour(new Date().getHours());
+  const market = getMarketStatus();
   const watchlistSymbols = useWatchlistStore((s) => s.symbols);
   const watchlistQuotes = useQuotes(watchlistSymbols.slice(0, 3));
   const dailyBrief = buildDailyBrief(watchlistQuotes.data ?? [], quotes.data ?? []);
@@ -48,9 +57,15 @@ export default function HomeScreen() {
 
         <View style={styles.header}>
           <Text style={[typography.pageTitle, { color: colors.text }]}>{greeting}</Text>
-          <Text style={[typography.body, { color: colors.textMuted }]}>
-            Here's a quick look at today's market.
-          </Text>
+          <View style={styles.subtitleRow}>
+            <Text style={[typography.body, { color: colors.textMuted }]}>
+              Here's a quick look at today's market.
+            </Text>
+          </View>
+          <View style={[styles.marketPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.marketDot, { backgroundColor: colors[PHASE_DOT[market.phase]] }]} />
+            <Text style={[typography.micro, { color: colors.textMuted, fontWeight: "600" }]}>{market.label}</Text>
+          </View>
         </View>
 
         <SectionHeading title="Watchlist" action="View all" onPressAction={() => router.push("/(tabs)/watchlist")} />
@@ -100,6 +115,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   header: { marginBottom: 20 },
+  subtitleRow: { marginTop: 2 },
+  marketPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    marginTop: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  marketDot: { width: 7, height: 7, borderRadius: 4 },
   card: { padding: 4, borderRadius: 14, borderWidth: 1, marginBottom: 20 },
   aiCard: { padding: 16, borderWidth: 1.5 },
   aiHeadingRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12, marginTop: 8 },
