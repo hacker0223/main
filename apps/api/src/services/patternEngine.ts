@@ -53,14 +53,23 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   // request fails in <1s, and only a LATER request (after the background
   // wake finished) succeeds. That's exactly the "works sometimes" flapping.
   //
-  // The fix is to retry on those cold-edge failures with a backoff long
-  // enough to outlast a real cold start (~50-156s observed). The first
-  // attempt triggers the wake; subsequent attempts ride through it so a
-  // single user request transparently waits instead of failing. A genuine
-  // bad response (400 from a malformed window) is NOT retried.
+  // The fix is to retry on those cold failures with a backoff long enough to
+  // outlast a real cold start (~50-156s observed). The first attempt
+  // triggers the wake; subsequent attempts ride through it so a single user
+  // request transparently waits instead of failing.
+  //
+  // DENYLIST, not allowlist: we retry EVERY non-success response except a
+  // genuine client error (400/422 = the window itself was rejected). An
+  // earlier allowlist of specific 5xx codes let a booting service slip
+  // through — Render's internal service-to-service routing can return an
+  // assortment of transient statuses/reset connections while the free-tier
+  // engine spins up (unlike the public edge, it doesn't hold the connection
+  // for the wake), and any status outside the allowlist aborted the retry
+  // after ~2 tries. Retrying everything-but-bad-input is robust to whatever
+  // transient status the wake happens to produce.
   const url = `${PATTERN_ENGINE_URL}${path}`;
   const opts = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
-  const RETRYABLE = new Set([408, 425, 500, 502, 503, 504]);
+  const NON_RETRYABLE = new Set([400, 422]); // the input was rejected — retrying won't help
   const maxAttempts = 10;
   let lastDetail = "";
 
@@ -69,14 +78,13 @@ async function post<T>(path: string, body: unknown): Promise<T> {
       const res = await fetchWithTimeout(url, opts, 30000);
       if (res.ok) return res.json() as Promise<T>;
       const text = await res.text().catch(() => "");
-      // Non-retryable (e.g. 400 bad input) — fail immediately, no waiting.
-      if (!RETRYABLE.has(res.status)) {
-        throw new Error(`pattern-engine ${path} failed: ${res.status} ${text}`);
+      if (NON_RETRYABLE.has(res.status)) {
+        throw new Error(`pattern-engine ${path} rejected input: ${res.status} ${text}`);
       }
       lastDetail = `${res.status} ${text}`;
     } catch (err) {
-      // Network/timeout error — also treated as a (retryable) cold-start
-      // symptom, unless it's the non-retryable error we threw above.
+      // Network/timeout/connection-reset — a cold-start symptom; retry it.
+      // Only the bad-input error we threw just above is non-retryable.
       if (err instanceof Error && err.message.startsWith("pattern-engine")) throw err;
       lastDetail = err instanceof Error ? err.message : String(err);
     }
