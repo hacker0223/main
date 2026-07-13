@@ -5,7 +5,6 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 import { PageTitle } from "../../src/components/PageTitle";
 import { Screen } from "../../src/components/Screen";
 import { SectionHeading } from "../../src/components/SectionHeading";
-import { articles } from "../../src/features/learn/articles";
 import { glossaryTerms } from "../../src/features/learn/glossary";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
@@ -79,28 +78,10 @@ export default function LearnScreen() {
           </Pressable>
         </View>
 
-        <SectionHeading title="Articles" />
-        {articles.map((a) => (
-          <Pressable
-            key={a.slug}
-            onPress={() => router.push(`/learn/${a.slug}`)}
-            style={({ pressed }) => [
-              styles.articleCard,
-              { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[typography.cardTitle, { color: colors.text }]}>{a.title}</Text>
-              <Text style={[typography.caption, styles.summary, { color: colors.textMuted }]} numberOfLines={2}>
-                {a.summary}
-              </Text>
-              <Text style={[typography.micro, { color: colors.textMuted }]}>{a.readMinutes} min read</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-          </Pressable>
-        ))}
-
         <SectionHeading title="Glossary" />
+        <Text style={[typography.caption, styles.glossaryIntro, { color: colors.textMuted }]}>
+          Plain-English definitions for the terms you'll run into across the app. Search or scroll.
+        </Text>
         <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
@@ -134,16 +115,7 @@ const styles = StyleSheet.create({
   toolCard: { flexGrow: 1, flexBasis: "45%", padding: 14, borderRadius: 14, borderWidth: 1.5 },
   toolIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   toolSummary: { marginTop: 3, lineHeight: 16 },
-  articleCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 10,
-  },
-  summary: { marginTop: 3, marginBottom: 4, lineHeight: 17 },
+  glossaryIntro: { marginTop: -6, marginBottom: 14, lineHeight: 17 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
