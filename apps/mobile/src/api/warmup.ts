@@ -1,18 +1,23 @@
 import { useServerStatus } from "../store/serverStatusStore";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
+// The pattern-engine's OWN public URL, hit directly from the device. This
+// is deliberately NOT proxied through summit-api: Render does not wake a
+// sleeping free service from an internal service-to-service call (proven
+// the hard way — 150s of summit-api retries never woke a cold engine, but
+// a single external request woke it in ~50s). Only an EXTERNAL request to
+// the engine's public URL triggers the spin-up, and the phone is external.
+const ENGINE_URL = process.env.EXPO_PUBLIC_PATTERN_ENGINE_URL ?? "";
 
 // Render's free tier spins both backends down after ~15 min idle. A cold
-// summit-api takes ~20s to wake and the Python pattern-engine ~70s. The
-// GET/POST paths used to time out at 10s, so a first-time user opening the
-// app to a sleeping backend saw "took too long" on everything — the worst
-// possible first impression. This fires the moment the app launches (and on
-// resume from background) so the wake-up happens DURING onboarding/idle,
-// not while the user is staring at a screen waiting for their first stock.
+// summit-api takes ~20s to wake and the Python pattern-engine ~50-150s.
+// This fires the moment the app launches (and on resume from background) so
+// the wake-up happens DURING onboarding/idle, not while the user is staring
+// at a screen waiting for their first stock or Pattern Lab result.
 let lastWarmedAt = 0;
 const WARM_COOLDOWN_MS = 10 * 60 * 1000; // if we warmed recently, it's still warm
 const BANNER_DELAY_MS = 2500; // only show the banner if the server is genuinely slow
-const ENGINE_WARM_TIMEOUT_MS = 120_000;
+const ENGINE_WARM_TIMEOUT_MS = 150_000; // a cold Python engine can take this long to answer /health
 
 export function warmUpBackend() {
   if (!API_URL) return;
@@ -32,19 +37,16 @@ export function warmUpBackend() {
       setWarming(false);
     });
 
-  // Wake the pattern-engine through the proxy with a throwaway request
-  // (narrate:false → no Anthropic call) so the first Pattern Signal card
-  // and Pattern Lab visit hit a warm engine instead of a 70s cold start.
-  // Fire-and-forget with its own abort so a long cold start can't leak.
-  const controller = new AbortController();
-  const engineTimer = setTimeout(() => controller.abort(), ENGINE_WARM_TIMEOUT_MS);
-  const dummyCloses = Array.from({ length: 25 }, (_, i) => 100 + i);
-  fetch(`${API_URL}/api/pattern-lab/classify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ closes: dummyCloses, narrate: false }),
-    signal: controller.signal,
-  })
-    .catch(() => {})
-    .finally(() => clearTimeout(engineTimer));
+  // Wake the pattern-engine directly (external request = the only thing that
+  // triggers its spin-up). Fire-and-forget; by the time the user reaches
+  // Pattern Lab or a stock's Pattern Signal card, the engine has had the
+  // whole onboarding/browse window to finish booting. The abort just keeps
+  // a very long cold start from leaking the request forever.
+  if (ENGINE_URL) {
+    const controller = new AbortController();
+    const engineTimer = setTimeout(() => controller.abort(), ENGINE_WARM_TIMEOUT_MS);
+    fetch(`${ENGINE_URL}/health`, { signal: controller.signal })
+      .catch(() => {})
+      .finally(() => clearTimeout(engineTimer));
+  }
 }

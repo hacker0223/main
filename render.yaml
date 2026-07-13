@@ -2,7 +2,11 @@ services:
   - type: web
     name: summit-pattern-engine
     runtime: python
-    plan: free
+    # Starter (paid): never spins down. A free instance slept after ~15min
+    # idle and cold-started in 50-150s, which made Pattern Lab and the whole
+    # app flap on first load. Keep this in sync with the dashboard so a
+    # blueprint re-sync can't silently revert it to free.
+    plan: starter
     rootDir: apps/pattern-engine
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
@@ -13,7 +17,7 @@ services:
   - type: web
     name: summit-api
     runtime: node
-    plan: free
+    plan: starter # paid: never spins down (see pattern-engine note above)
     # --include=dev is required here: NODE_ENV=production (below) is applied
     # during the build step too, and npm skips devDependencies under
     # NODE_ENV=production by default — but typescript and the @types/*

@@ -14,13 +14,15 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://summit-api-hehi.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://summit-api-hehi.onrender.com",
+        "EXPO_PUBLIC_PATTERN_ENGINE_URL": "https://summit-pattern-engine.onrender.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://summit-api-hehi.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://summit-api-hehi.onrender.com",
+        "EXPO_PUBLIC_PATTERN_ENGINE_URL": "https://summit-pattern-engine.onrender.com"
       }
     }
   },
