@@ -155,11 +155,9 @@ This preempts the questions a reviewer asks about a finance + AI app. Paste verb
 ```
 Summit is an informational and educational stock-research app. It does NOT execute trades, hold or transfer funds, connect to any brokerage, or make buy/sell recommendations. It is not operated by a financial institution and provides no personalized financial advice — this is disclaimed clearly in onboarding, on relevant screens, and in the Terms.
 
-No login is required, so no demo account is needed to review the app. All user data (watchlist, preferences, alerts) is stored locally on device.
+No login is required, so no demo account is needed to review the app. All user data (watchlist, alerts) is stored locally on device.
 
 Market data is sourced from public third-party providers (Finnhub, Yahoo Finance, SEC EDGAR). The "Pattern Lab" AI features use Anthropic's Claude API only to explain statistics that are computed independently in our own backend — the AI is never used to generate a prediction or a trading signal.
-
-Note: the Pattern Lab backend runs on a free hosting tier that "sleeps" when idle, so the FIRST request after a period of inactivity can take 30–60 seconds to respond (the app shows a "please be patient" message during this). This is expected behavior, not a bug — subsequent requests are fast.
 
 Contact for any questions: nathannathan0223@gmail.com
 ```

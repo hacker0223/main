@@ -16,12 +16,6 @@ const investorTypeLabels: Record<string, string> = {
   long_term: "Long-term / fundamentals investor",
 };
 
-const preferenceRows: { icon: keyof typeof Ionicons.glyphMap; label: string; value?: string }[] = [
-  { icon: "notifications-outline", label: "Notifications" },
-  { icon: "contrast-outline", label: "Appearance", value: "Automatic" },
-  { icon: "cash-outline", label: "Currency", value: "USD" },
-];
-
 const SUPPORT_EMAIL = "nathannathan0223@gmail.com"; // same contact as docs/terms.html & docs/privacy.html
 
 const supportRows: { icon: keyof typeof Ionicons.glyphMap; label: string; route?: string; email?: boolean }[] = [
@@ -40,8 +34,6 @@ export default function AccountScreen() {
     await reset();
     router.replace("/(onboarding)/welcome");
   };
-
-  const notify = () => Alert.alert("Coming soon", "This isn't wired up yet.");
 
   const contactSupport = () =>
     Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Summit%20support`).catch(() =>
@@ -66,19 +58,6 @@ export default function AccountScreen() {
           <Row label="Risk tolerance" value={answers.riskTolerance ?? "Not set"} colors={colors} last />
         </View>
 
-        <SectionHeading title="Preferences" />
-        <View style={[styles.card, styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          {preferenceRows.map((row, i) => (
-            <ListRow
-              key={row.label}
-              {...row}
-              onPress={notify}
-              colors={colors}
-              last={i === preferenceRows.length - 1}
-            />
-          ))}
-        </View>
-
         <SectionHeading title="Support" />
         <View style={[styles.card, styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {supportRows.map((row, i) => (
@@ -86,7 +65,7 @@ export default function AccountScreen() {
               key={row.label}
               icon={row.icon}
               label={row.label}
-              onPress={() => (row.route ? router.push(row.route) : row.email ? contactSupport() : notify())}
+              onPress={() => (row.route ? router.push(row.route) : contactSupport())}
               colors={colors}
               last={i === supportRows.length - 1}
             />

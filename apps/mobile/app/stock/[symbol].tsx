@@ -35,7 +35,6 @@ const subTabs = [
   "AI Insights",
   "News",
   "Filings",
-  "Community",
 ] as const;
 
 export default function StockDetailScreen() {
@@ -71,8 +70,6 @@ export default function StockDetailScreen() {
     checkedPriceRef.current = price;
     checkAlertPrice(ticker, price);
   }, [ticker, detail.data?.quote.price, checkAlertPrice]);
-
-  const notify = () => Alert.alert("Coming soon", "This isn't wired up yet.");
 
   // Lock the page's vertical scroll while the user scrubs the price chart —
   // imperative setNativeProps (no re-render mid-gesture), extra ?. because
@@ -309,15 +306,8 @@ export default function StockDetailScreen() {
               <TechnicalsTab symbol={ticker} />
             ) : subTab === "AI Insights" ? (
               <AIInsightsTab symbol={ticker} keyStats={detail.data?.keyStats} />
-            ) : subTab === "Filings" ? (
-              <FilingsTab symbol={ticker} />
             ) : (
-              <View style={styles.comingSoon}>
-                <Ionicons name="people-outline" size={28} color={colors.textMuted} />
-                <Text style={[typography.body, styles.comingSoonText, { color: colors.textMuted }]}>
-                  Community discussion needs real user accounts first — coming after Auth is wired up.
-                </Text>
-              </View>
+              <FilingsTab symbol={ticker} />
             )}
           </View>
         </ScrollView>
