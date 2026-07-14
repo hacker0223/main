@@ -103,6 +103,12 @@ export function fetchQuotes(symbols: string[]): Promise<StockQuote[]> {
   return apiGet(`/api/stocks/quotes?symbols=${symbols.map(encodeURIComponent).join(",")}`);
 }
 
+// Compact recent-trend series per symbol, for the row sparklines. Keyed by
+// symbol; a symbol with no data is simply absent from the map.
+export function fetchSparklines(symbols: string[]): Promise<Record<string, number[]>> {
+  return apiGet(`/api/stocks/sparklines?symbols=${symbols.map(encodeURIComponent).join(",")}`);
+}
+
 export interface NewsItem {
   headline: string;
   summary: string;

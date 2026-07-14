@@ -159,7 +159,7 @@ No login is required, so no demo account is needed to review the app. All user d
 
 Market data is sourced from public third-party providers (Finnhub, Yahoo Finance, SEC EDGAR). The "Pattern Lab" AI features use Anthropic's Claude API only to explain statistics that are computed independently in our own backend — the AI is never used to generate a prediction or a trading signal.
 
-Contact for any questions: nathannathan0223@gmail.com
+Contact for any questions: summitsupport@gmail.com
 ```
 
 ---

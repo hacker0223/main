@@ -16,7 +16,7 @@ const investorTypeLabels: Record<string, string> = {
   long_term: "Long-term / fundamentals investor",
 };
 
-const SUPPORT_EMAIL = "nathannathan0223@gmail.com"; // same contact as docs/terms.html & docs/privacy.html
+const SUPPORT_EMAIL = "summitsupport@gmail.com"; // same contact as docs/terms.html & docs/privacy.html
 
 const supportRows: { icon: keyof typeof Ionicons.glyphMap; label: string; route?: string; email?: boolean }[] = [
   { icon: "school-outline", label: "Learn", route: "/learn" },

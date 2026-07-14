@@ -4,10 +4,19 @@ import type { StockQuote } from "@summit/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { CompanyLogo } from "./CompanyLogo";
 import { PriceChange } from "./PriceChange";
+import { Sparkline } from "./Sparkline";
 import { typography } from "../theme/typography";
 import { useTheme } from "../theme/useTheme";
 
-export function StockRow({ quote, onRemove }: { quote: StockQuote; onRemove?: () => void }) {
+export function StockRow({
+  quote,
+  onRemove,
+  sparkline,
+}: {
+  quote: StockQuote;
+  onRemove?: () => void;
+  sparkline?: number[];
+}) {
   const { colors } = useTheme();
 
   return (
@@ -27,6 +36,11 @@ export function StockRow({ quote, onRemove }: { quote: StockQuote; onRemove?: ()
           </Text>
         </View>
       </View>
+      {sparkline ? (
+        <View style={styles.sparkWrap}>
+          <Sparkline data={sparkline} />
+        </View>
+      ) : null}
       <View style={styles.priceCol}>
         <Text style={[typography.cardTitle, { color: colors.text }]}>${quote.price.toFixed(2)}</Text>
         <PriceChange change={quote.change} changePercent={quote.changePercent} />
@@ -56,6 +70,7 @@ const styles = StyleSheet.create({
   leftGroup: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, minWidth: 0, marginRight: 10 },
   nameCol: { flexShrink: 1, minWidth: 0 },
   name: { marginTop: 3 },
+  sparkWrap: { marginRight: 12, flexShrink: 0 },
   priceCol: { alignItems: "flex-end", flexShrink: 0 },
   removeButton: { marginLeft: 10 },
 });

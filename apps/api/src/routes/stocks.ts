@@ -78,6 +78,56 @@ stocksRouter.get("/quotes", async (req, res) => {
   }
 });
 
+// Compact recent-trend series (one per symbol) for the little sparklines on
+// stock rows. Batched so a list of N rows is a single request, not N; each
+// symbol is fetched in parallel and independently, and a symbol that fails
+// (or has no data) is simply omitted rather than failing the whole call.
+const SPARKLINE_MAX_SYMBOLS = 30;
+const SPARKLINE_MAX_POINTS = 24; // downsample to keep the payload and render tiny
+
+stocksRouter.get("/sparklines", async (req, res) => {
+  const symbols = String(req.query.symbols || "")
+    .split(",")
+    .map((s) => s.trim().toUpperCase())
+    .filter(Boolean)
+    .slice(0, SPARKLINE_MAX_SYMBOLS);
+
+  if (symbols.length === 0) {
+    res.json({});
+    return;
+  }
+
+  try {
+    const entries = await Promise.all(
+      symbols.map(async (symbol) => {
+        try {
+          const points = await getChart(symbol, "1M");
+          const closes = points.map((p) => p.close);
+          if (closes.length < 2) return null;
+          // Evenly downsample to at most SPARKLINE_MAX_POINTS, always keeping
+          // the last point so the endpoint matches the current price.
+          const step = Math.ceil(closes.length / SPARKLINE_MAX_POINTS);
+          const sampled = step <= 1 ? closes : closes.filter((_, i) => i % step === 0);
+          if (sampled[sampled.length - 1] !== closes[closes.length - 1]) {
+            sampled.push(closes[closes.length - 1]);
+          }
+          return [symbol, sampled] as const;
+        } catch (err) {
+          console.error(`[stocks:sparklines] skipping ${symbol}: ${(err as Error).message}`);
+          return null;
+        }
+      })
+    );
+    const bySymbol: Record<string, number[]> = {};
+    for (const entry of entries) {
+      if (entry) bySymbol[entry[0]] = entry[1];
+    }
+    res.json(bySymbol);
+  } catch (err) {
+    handleError("sparklines", err, res);
+  }
+});
+
 stocksRouter.get("/screeners/:kind", async (req, res) => {
   const kind = req.params.kind as (typeof VALID_SCREENERS)[number];
   if (!VALID_SCREENERS.includes(kind)) {

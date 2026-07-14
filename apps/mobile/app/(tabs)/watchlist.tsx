@@ -7,6 +7,7 @@ import { Screen } from "../../src/components/Screen";
 import { Skeleton } from "../../src/components/Skeleton";
 import { StockRow } from "../../src/components/StockRow";
 import { useQuotes } from "../../src/hooks/useQuotes";
+import { useSparklines } from "../../src/hooks/useSparklines";
 import { useWatchlistStore } from "../../src/store/watchlistStore";
 import { useTheme } from "../../src/theme/useTheme";
 
@@ -15,6 +16,7 @@ export default function WatchlistScreen() {
   const symbols = useWatchlistStore((s) => s.symbols);
   const removeSymbol = useWatchlistStore((s) => s.remove);
   const quotes = useQuotes(symbols);
+  const sparklines = useSparklines(symbols);
 
   if (symbols.length === 0) {
     return (
@@ -49,7 +51,12 @@ export default function WatchlistScreen() {
           Array.from({ length: symbols.length }).map((_, i) => <Skeleton key={i} style={styles.skeleton} />)
         ) : (
           quotes.data?.map((quote) => (
-            <StockRow key={quote.symbol} quote={quote} onRemove={() => removeSymbol(quote.symbol)} />
+            <StockRow
+              key={quote.symbol}
+              quote={quote}
+              sparkline={sparklines[quote.symbol]}
+              onRemove={() => removeSymbol(quote.symbol)}
+            />
           ))
         )}
       </ScrollView>

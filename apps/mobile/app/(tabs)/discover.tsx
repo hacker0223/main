@@ -12,6 +12,7 @@ import { StockRowSkeleton } from "../../src/components/StockRowSkeleton";
 import { curatedSymbols } from "../../src/constants/curatedSymbols";
 import { suggestionsForInterests } from "../../src/constants/interestSuggestions";
 import { useQuotes } from "../../src/hooks/useQuotes";
+import { useSparklines } from "../../src/hooks/useSparklines";
 import { useScreener } from "../../src/hooks/useScreener";
 import { useOnboardingStore } from "../../src/store/onboardingStore";
 import { useWatchlistStore } from "../../src/store/watchlistStore";
@@ -37,6 +38,7 @@ export default function DiscoverScreen() {
   const watchlistSymbols = useWatchlistStore((s) => s.symbols);
   const suggestedSymbols = suggestionsForInterests(interests, watchlistSymbols);
   const suggested = useQuotes(suggestedSymbols);
+  const sparklines = useSparklines([...curatedSymbols, ...suggestedSymbols]);
 
   return (
     <Screen>
@@ -130,7 +132,9 @@ export default function DiscoverScreen() {
                 <StockRowSkeleton key={i} />
               ))
             ) : suggested.error ? null : (
-              (suggested.data ?? []).map((quote) => <StockRow key={quote.symbol} quote={quote} />)
+              (suggested.data ?? []).map((quote) => (
+                <StockRow key={quote.symbol} quote={quote} sparkline={sparklines[quote.symbol]} />
+              ))
             )}
             <Text style={[typography.micro, styles.universeNote, { color: colors.textMuted }]}>
               Based on the interests you picked during setup — a browsing starting point, not a
@@ -144,7 +148,9 @@ export default function DiscoverScreen() {
           ? Array.from({ length: curatedSymbols.length }).map((_, i) => <StockRowSkeleton key={i} />)
           : quotes.error
             ? <ErrorState message={quotes.error} onRetry={quotes.refetch} />
-            : (quotes.data ?? []).map((quote) => <StockRow key={quote.symbol} quote={quote} />)}
+            : (quotes.data ?? []).map((quote) => (
+                <StockRow key={quote.symbol} quote={quote} sparkline={sparklines[quote.symbol]} />
+              ))}
       </ScrollView>
     </Screen>
   );

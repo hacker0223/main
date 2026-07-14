@@ -60,7 +60,7 @@ const sections: { heading: string; paragraphs: string[] }[] = [
   },
   {
     heading: "Contact",
-    paragraphs: ["Questions about these terms or privacy: nathannathan0223@gmail.com"],
+    paragraphs: ["Questions about these terms or privacy: summitsupport@gmail.com"],
   },
 ];
 

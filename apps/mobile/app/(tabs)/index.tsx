@@ -11,6 +11,7 @@ import { SummitWordmark } from "../../src/components/SummitWordmark";
 import { curatedSymbols } from "../../src/constants/curatedSymbols";
 import { buildDailyBrief } from "../../src/features/home/dailyBrief";
 import { useQuotes } from "../../src/hooks/useQuotes";
+import { useSparklines } from "../../src/hooks/useSparklines";
 import { useWatchlistStore } from "../../src/store/watchlistStore";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
@@ -37,6 +38,9 @@ export default function HomeScreen() {
   const market = getMarketStatus();
   const watchlistSymbols = useWatchlistStore((s) => s.symbols);
   const watchlistQuotes = useQuotes(watchlistSymbols.slice(0, 3));
+  // One batched sparkline request covering both the market-snapshot and
+  // watchlist rows on this screen.
+  const sparklines = useSparklines([...curatedSymbols.slice(0, 4), ...watchlistSymbols.slice(0, 3)]);
   const dailyBrief = buildDailyBrief(watchlistQuotes.data ?? [], quotes.data ?? []);
 
   return (
@@ -83,7 +87,9 @@ export default function HomeScreen() {
         ) : watchlistQuotes.loading ? (
           <StockRowSkeleton />
         ) : (
-          (watchlistQuotes.data ?? []).map((quote) => <StockRow key={quote.symbol} quote={quote} />)
+          (watchlistQuotes.data ?? []).map((quote) => (
+            <StockRow key={quote.symbol} quote={quote} sparkline={sparklines[quote.symbol]} />
+          ))
         )}
 
         <View style={styles.aiHeadingRow}>
@@ -99,7 +105,9 @@ export default function HomeScreen() {
           ? Array.from({ length: 4 }).map((_, i) => <StockRowSkeleton key={i} />)
           : quotes.error
             ? <ErrorState message={quotes.error} onRetry={quotes.refetch} />
-            : (quotes.data ?? []).map((quote) => <StockRow key={quote.symbol} quote={quote} />)}
+            : (quotes.data ?? []).map((quote) => (
+                <StockRow key={quote.symbol} quote={quote} sparkline={sparklines[quote.symbol]} />
+              ))}
       </ScrollView>
     </Screen>
   );
