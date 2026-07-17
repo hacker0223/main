@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Summit — Join the Private Beta</title>
+<meta name="description" content="Summit is a stock research app built without the hype — real data, transparent statistics, and no buy/sell signals. Now in private beta on iOS.">
+<style>
+  :root {
+    --bg: #f6f8fc;
+    --surface: #ffffff;
+    --ink: #0b0e14;
+    --muted: #5a6472;
+    --line: #e5e9f2;
+    --blue: #2563eb;
+    --blue-soft: #eaf1fe;
+    --amber: #f59e0b;
+    --shadow: 0 18px 50px rgba(17, 32, 66, 0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0e14;
+      --surface: #141a24;
+      --ink: #f1f5fb;
+      --muted: #98a2b3;
+      --line: #232c3a;
+      --blue: #6ea0ff;
+      --blue-soft: #16233d;
+      --amber: #fbbf24;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f8fc; --surface: #ffffff; --ink: #0b0e14; --muted: #5a6472;
+    --line: #e5e9f2; --blue: #2563eb; --blue-soft: #eaf1fe; --amber: #f59e0b;
+    --shadow: 0 18px 50px rgba(17, 32, 66, 0.12);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0e14; --surface: #141a24; --ink: #f1f5fb; --muted: #98a2b3;
+    --line: #232c3a; --blue: #6ea0ff; --blue-soft: #16233d; --amber: #fbbf24;
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+
+  header.nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 0 8px;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; letter-spacing: -0.3px; }
+  .brand .dot { color: var(--amber); }
+  .nav .pill {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--blue); background: var(--blue-soft); padding: 5px 11px; border-radius: 999px;
+  }
+
+  /* Hero */
+  .hero { position: relative; text-align: center; padding: 46px 0 40px; overflow: hidden; }
+  .hero .eyebrow {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: clamp(34px, 7vw, 52px); line-height: 1.05; letter-spacing: -1.5px;
+    margin: 0 0 18px; text-wrap: balance; font-weight: 800;
+  }
+  .hero h1 .accent { color: var(--blue); }
+  .hero p.lede {
+    font-size: clamp(16px, 2.4vw, 19px); color: var(--muted); max-width: 540px;
+    margin: 0 auto 30px; text-wrap: balance;
+  }
+  .cta {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: var(--blue); color: #fff; text-decoration: none;
+    font-size: 17px; font-weight: 700; padding: 15px 30px; border-radius: 14px;
+    box-shadow: var(--shadow); transition: transform 0.15s ease;
+  }
+  .cta:hover { transform: translateY(-2px); }
+  .cta.big { font-size: 18px; padding: 17px 36px; }
+  .hero .sub-note { display: block; margin-top: 14px; font-size: 13px; color: var(--muted); }
+
+  /* subtle mountain motif under the hero */
+  .ridge { display: block; width: 100%; margin-top: 26px; }
+
+  section { padding: 40px 0; }
+  .section-label {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 18px; text-align: center;
+  }
+
+  .features { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px 20px;
+  }
+  .card .icon {
+    width: 38px; height: 38px; border-radius: 10px; background: var(--blue-soft);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+    font-size: 20px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 17px; letter-spacing: -0.2px; }
+  .card p { margin: 0; font-size: 14.5px; color: var(--muted); line-height: 1.5; }
+
+  /* honesty band */
+  .band {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+    padding: 28px 26px; text-align: center;
+  }
+  .band h2 { margin: 0 0 10px; font-size: 22px; letter-spacing: -0.4px; }
+  .band p { margin: 0 auto; max-width: 520px; color: var(--muted); font-size: 15px; }
+
+  .final { text-align: center; padding: 48px 0 20px; }
+  .final h2 { font-size: clamp(24px, 5vw, 34px); letter-spacing: -0.6px; margin: 0 0 10px; text-wrap: balance; }
+  .final p { color: var(--muted); margin: 0 auto 26px; max-width: 460px; }
+  .req { font-size: 13px; color: var(--muted); margin-top: 16px; }
+
+  footer {
+    border-top: 1px solid var(--line); margin-top: 40px; padding: 26px 0 50px;
+    text-align: center; color: var(--muted); font-size: 13px;
+  }
+  footer a { color: var(--blue); text-decoration: none; }
+  footer .links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+  footer .disclaimer { max-width: 620px; margin: 12px auto 0; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="nav">
+      <div class="brand">⛰️ Summit</div>
+      <span class="pill">Private Beta · iOS</span>
+    </header>
+
+    <div class="hero">
+      <div class="eyebrow">Stock research, without the hype</div>
+      <h1>The market, explained — <span class="accent">not predicted.</span></h1>
+      <p class="lede">
+        Summit gives casual investors real data, transparent statistics, and honest context —
+        with no buy/sell signals, no black boxes, and nothing tracked. Be one of the first to try it.
+      </p>
+      <a class="cta big beta-btn" href="#">Join the beta →</a>
+      <span class="sub-note">Free · iPhone only for now · takes 2 minutes to install</span>
+
+      <svg class="ridge" viewBox="0 0 760 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="600" cy="24" r="13" fill="var(--amber)" opacity="0.85"/>
+        <path d="M0 90 L150 40 L250 70 L400 18 L520 60 L620 34 L760 78 L760 90 Z" fill="var(--blue)" opacity="0.14"/>
+        <path d="M0 90 L200 52 L340 82 L470 44 L620 74 L760 50 L760 90 Z" fill="var(--blue)" opacity="0.22"/>
+      </svg>
+    </div>
+
+    <section>
+      <div class="section-label">What's inside</div>
+      <div class="features">
+        <div class="card">
+          <div class="icon">📊</div>
+          <h3>Pattern Lab</h3>
+          <p>See how historically similar chart shapes actually played out — a frequency count from real precedents, with the model's backtested accuracy shown, not hidden.</p>
+        </div>
+        <div class="card">
+          <div class="icon">🎯</div>
+          <h3>An honest risk score</h3>
+          <p>One number from a stock's volatility, beta, and valuation — with the exact formula shown, so you can see why it scored the way it did. No black box.</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔎</div>
+          <h3>Real data, one clean view</h3>
+          <p>Live quotes with trend sparklines, fundamentals straight from SEC filings, technicals, news, price alerts, and an interactive chart you can scrub through.</p>
+        </div>
+        <div class="card">
+          <div class="icon">✏️</div>
+          <h3>Practice, risk-free</h3>
+          <p>Draw on a Chart Sandbox or import a real stock's history to study — learn to read price action with no live money and no real stakes.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="band">
+        <h2>No hype. No incentives. No account.</h2>
+        <p>
+          Summit doesn't execute trades or tell you what to buy or sell — so it has no reason to get you
+          trading more. There's no login, no ads, and no tracking. Everything you save lives on your device.
+        </p>
+      </div>
+    </section>
+
+    <section class="final">
+      <h2>Want in early?</h2>
+      <p>Join the private beta, try everything, and tell us what you think. Your feedback shapes what launches.</p>
+      <a class="cta big beta-btn" href="#">Join the beta →</a>
+      <div class="req">Requires an iPhone and the free TestFlight app.</div>
+    </section>
+
+    <footer>
+      <div class="links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="mailto:summitaisupport@gmail.com">Contact</a>
+      </div>
+      <p class="disclaimer">
+        Not financial advice. For informational and educational purposes only. Summit is not a registered
+        investment adviser or broker-dealer and does not execute trades. Market data is provided by third
+        parties and may be delayed or inaccurate. Past patterns do not guarantee future results.
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    // ONE place to set where every "Join the beta" button points.
+    // Paste your TestFlight public link (testflight.apple.com/join/xxxx) once
+    // it's approved — or your Google Form link to collect signups first.
+    var BETA_URL = "REPLACE_WITH_YOUR_TESTFLIGHT_OR_FORM_LINK";
+    document.querySelectorAll(".beta-btn").forEach(function (a) {
+      a.setAttribute("href", BETA_URL);
+      a.setAttribute("target", "_blank");
+      a.setAttribute("rel", "noopener");
+    });
+  </script>
+</body>
+</html>
