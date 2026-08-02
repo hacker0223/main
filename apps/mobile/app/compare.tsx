@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -53,8 +54,12 @@ export default function CompareScreen() {
     <Screen>
       <View style={styles.header}>
         <Text style={[typography.pageTitle, { color: colors.text }]}>Compare</Text>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={[typography.body, { color: colors.primary }]}>Done</Text>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={10}
+          style={[styles.closeBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        >
+          <Ionicons name="close" size={20} color={colors.text} />
         </Pressable>
       </View>
 
@@ -79,6 +84,14 @@ export default function CompareScreen() {
               style={[typography.caption, styles.addInput, { color: colors.text }]}
               autoCapitalize="characters"
               autoCorrect={false}
+              returnKeyType="done"
+              // The keyboard's own Done key finishes typing: add the top
+              // match if there is one, otherwise just dismiss. Leaving the
+              // screen is the separate close (X) button up top.
+              onSubmitEditing={() => {
+                if (results[0]) addSymbol(results[0].symbol);
+                else Keyboard.dismiss();
+              }}
             />
           </View>
         ) : null}
@@ -149,6 +162,7 @@ export default function CompareScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12, marginBottom: 16 },
+  closeBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
   chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5 },
   dot: { width: 8, height: 8, borderRadius: 4 },

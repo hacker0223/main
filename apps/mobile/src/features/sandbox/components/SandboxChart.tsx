@@ -117,7 +117,9 @@ export function SandboxChart({
   // (reduced) slotWidth, so the gutter doesn't throw off candle selection.
   const chartAreaWidth = Math.max(0, width - PRICE_LABEL_GUTTER);
   const slotWidth = chartAreaWidth / (visible.length || 1);
-  const candleWidth = Math.max(2, Math.min(10, slotWidth * 0.6));
+  // Cap raised from 10 to 18 so a sparse hand-drawn chart gets fat,
+  // easy-to-tap candle bodies instead of thin slivers.
+  const candleWidth = Math.max(2, Math.min(18, slotWidth * 0.62));
   const xAt = (localIndex: number) => localIndex * slotWidth + slotWidth / 2;
 
   const maxVolume = Math.max(...visible.map((c) => c.volume), 1);

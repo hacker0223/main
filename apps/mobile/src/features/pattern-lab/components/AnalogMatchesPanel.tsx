@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { CollapsibleText } from "../../../components/CollapsibleText";
 import { typography } from "../../../theme/typography";
 import { useTheme } from "../../../theme/useTheme";
 import type { AnalogsResponse } from "../../../api/client";
@@ -74,7 +75,7 @@ export function AnalogMatchesPanel({
           ) : null}
 
           {data.narration ? (
-            <Text style={[typography.body, styles.narration, { color: colors.text }]}>{data.narration}</Text>
+            <CollapsibleText text={data.narration} />
           ) : data.narrationError ? (
             <Text style={[typography.caption, styles.narrationError, { color: colors.textMuted }]}>
               AI narration unavailable: {data.narrationError}

@@ -5,7 +5,11 @@ import { generateRandomCandles } from "./generateRandomCandles";
 import { mockHistoricalSeries } from "./mockHistoricalData";
 import type { AnalysisResult, DataSource, Drawing, IndicatorKey, SandboxCandle, TrendlineDrawing } from "./types";
 
-const BLANK_CANDLE_COUNT = 30;
+// Deliberately low: a blank chart is for hand-drawing candles by dragging
+// their OHLC handles, and 30 candles packed across a phone made each one too
+// thin to grab (beta feedback). 14 gives fat, easy-to-manipulate candles;
+// the user can Add candle to extend.
+const BLANK_CANDLE_COUNT = 14;
 const BLANK_START_PRICE = 100;
 
 function makeBlankCandles(): SandboxCandle[] {

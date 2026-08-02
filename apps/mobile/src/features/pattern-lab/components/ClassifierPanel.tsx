@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { CollapsibleText } from "../../../components/CollapsibleText";
 import { typography } from "../../../theme/typography";
 import { useTheme } from "../../../theme/useTheme";
 import type { ClassifyResponse } from "../../../api/client";

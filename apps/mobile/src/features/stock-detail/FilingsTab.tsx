@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
+import { InfoDot } from "../../components/InfoDot";
 import { Skeleton } from "../../components/Skeleton";
 import { useFilings } from "../../hooks/useFilings";
 import { typography } from "../../theme/typography";
@@ -12,6 +13,15 @@ const FORM_DESCRIPTIONS: Record<string, string> = {
   "10-Q": "Quarterly report",
   "8-K": "Material event",
   "DEF 14A": "Proxy statement",
+};
+
+// Beginner-friendly explanation of what each filing type actually is, shown
+// via a tappable "(i)" so the codes aren't just jargon.
+const FORM_EXPLANATIONS: Record<string, string> = {
+  "10-K": "A company's comprehensive annual report to the SEC — audited financials, a full business overview, and risk factors. The most complete yearly picture of the company.",
+  "10-Q": "A lighter quarterly update, filed three times a year (unaudited). Shows how the business is tracking between annual reports.",
+  "8-K": "Announces a major event between the regular reports — an acquisition, a leadership change, or other significant news. The “something just happened” filing.",
+  "DEF 14A": "A proxy statement sent ahead of the annual shareholder meeting. Covers executive pay, board nominees, and the items shareholders vote on.",
 };
 
 export function FilingsTab({ symbol }: { symbol: string | undefined }) {
@@ -66,9 +76,14 @@ export function FilingsTab({ symbol }: { symbol: string | undefined }) {
             <Text style={[typography.label, { color: colors.primary }]}>{filing.form}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.cardTitle, { color: colors.text }]}>
-              {FORM_DESCRIPTIONS[filing.form] ?? filing.form}
-            </Text>
+            <View style={styles.titleRow}>
+              <Text style={[typography.cardTitle, { color: colors.text }]}>
+                {FORM_DESCRIPTIONS[filing.form] ?? filing.form}
+              </Text>
+              {FORM_EXPLANATIONS[filing.form] ? (
+                <InfoDot title={`${filing.form} — ${FORM_DESCRIPTIONS[filing.form] ?? "SEC filing"}`} definition={FORM_EXPLANATIONS[filing.form]} />
+              ) : null}
+            </View>
             <Text style={[typography.micro, { color: colors.textMuted }]}>
               Filed {new Date(filing.filedDate).toLocaleDateString()}
             </Text>
@@ -82,6 +97,7 @@ export function FilingsTab({ symbol }: { symbol: string | undefined }) {
 
 const styles = StyleSheet.create({
   note: { marginBottom: 16 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   row: {
     flexDirection: "row",
     alignItems: "center",

@@ -52,7 +52,13 @@ export default function SandboxScreen() {
             headerStyle: { backgroundColor: colors.background },
             headerTintColor: colors.text,
             headerLeft: () => (
-              <Pressable onPress={() => router.back()} hitSlop={12}>
+              <Pressable
+                // When a chart is loaded, Back returns to the source picker
+                // (this same screen's first step) rather than leaving to
+                // Learn — only exit the screen when already on the picker.
+                onPress={() => (s.dataSource ? s.reset() : router.back())}
+                hitSlop={12}
+              >
                 <Ionicons name="chevron-back" size={26} color={colors.primary} />
               </Pressable>
             ),
