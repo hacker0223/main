@@ -3,6 +3,7 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { ChartTimeframe } from "@summit/shared";
 import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { fetchNewsSummary } from "../../src/api/client";
 import { CompanyLogo } from "../../src/components/CompanyLogo";
 import { ErrorState } from "../../src/components/ErrorState";
 import { PriceChange } from "../../src/components/PriceChange";
@@ -12,6 +13,7 @@ import { SectionHeading } from "../../src/components/SectionHeading";
 import { SetAlertModal } from "../../src/components/SetAlertModal";
 import { Skeleton } from "../../src/components/Skeleton";
 import { StatGrid } from "../../src/components/StatGrid";
+import { SummarizeCard } from "../../src/components/SummarizeCard";
 import { AIInsightsTab } from "../../src/features/stock-detail/AIInsightsTab";
 import { FilingsTab } from "../../src/features/stock-detail/FilingsTab";
 import { formatCompactNumber, formatPercent, formatRatio } from "../../src/features/stock-detail/format";
@@ -494,6 +496,9 @@ function NewsTab({ symbol }: { symbol: string | undefined }) {
 
   return (
     <View>
+      {symbol ? (
+        <SummarizeCard label="Summarize the news" onSummarize={() => fetchNewsSummary(symbol).then((r) => r.summary)} />
+      ) : null}
       {news.data.map((item) => (
         <Pressable
           key={item.headline + item.datetime}

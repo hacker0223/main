@@ -138,4 +138,55 @@ export async function generateDevilsAdvocate(input: DevilsAdvocateInput): Promis
   return callClaude(DEVILS_ADVOCATE_SYSTEM_PROMPT, userMessage);
 }
 
+const INSIGHTS_SYSTEM_PROMPT = `You are explaining a stock's already-computed risk statistics to a retail investor learning to read them.
+
+You will be given: a REAL, ALREADY-COMPUTED risk score (0-100, blending historical volatility, beta, and valuation), the weight of each of those three inputs, the stock's annualized historical volatility, and a REAL, ALREADY-COMPUTED 30-day statistical price range (based on historical volatility, not a forecast).
+
+Rules, no exceptions:
+1. You are explaining what these numbers mean and why they came out this way — you are not adding a new opinion, prediction, or recommendation about where the stock is headed.
+2. Never state or imply a directional prediction ("likely to rise," "expect a pullback," etc.).
+3. Never invent a number not present in the input.
+4. Explicitly note that the price range is a statistical description of historical volatility, not a forecast of where the price will actually land.
+5. Keep it to 1-2 short paragraphs.
+6. Plain prose only — no markdown of any kind (no # headings, no ** bold, no bullet lists). Your output is rendered as raw text in a mobile app, so markdown syntax shows up as literal symbols.`;
+
+export interface InsightsSummaryInput {
+  symbol: string;
+  riskScore: number;
+  volatilityWeight: number;
+  betaWeight: number;
+  valuationWeight: number;
+  annualizedVolatilityPct: number;
+  rangeLow: number;
+  rangeCurrent: number;
+  rangeHigh: number;
+}
+
+export async function narrateInsights(input: InsightsSummaryInput): Promise<string> {
+  const userMessage = JSON.stringify(input, null, 2);
+  return callClaude(INSIGHTS_SYSTEM_PROMPT, userMessage, 512);
+}
+
+const NEWS_SYSTEM_PROMPT = `You are summarizing a stock's recent news headlines for a retail investor who doesn't have time to read them all.
+
+You will be given a list of REAL recent news headlines and summaries for one stock, each with its source and date.
+
+Rules, no exceptions:
+1. Summarize what these articles are actually reporting — do not add analysis, sentiment scoring, or a directional read on the stock that isn't explicitly stated in the source material.
+2. Do not state or imply a prediction, recommendation, or trading signal of any kind. If the news itself reports something bullish or bearish, you may say the news reports that — you may not add your own additional spin on top.
+3. Group related headlines together in your own words rather than listing them one by one.
+4. If the headlines cover unrelated topics, say so plainly rather than forcing a false narrative connecting them.
+5. Keep it to 2-3 short paragraphs.
+6. Plain prose only — no markdown of any kind (no # headings, no ** bold, no bullet lists). Your output is rendered as raw text in a mobile app, so markdown syntax shows up as literal symbols.`;
+
+export interface NewsSummaryInput {
+  symbol: string;
+  articles: { headline: string; summary: string; source: string; datetime: number }[];
+}
+
+export async function narrateNews(input: NewsSummaryInput): Promise<string> {
+  const userMessage = JSON.stringify(input, null, 2);
+  return callClaude(NEWS_SYSTEM_PROMPT, userMessage, 512);
+}
+
 export { AnthropicNotConfiguredError };

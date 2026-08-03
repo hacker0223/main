@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -21,8 +22,46 @@ import { usePatternLab } from "../src/features/pattern-lab/usePatternLab";
 import { PageTitle } from "../src/components/PageTitle";
 import { Screen } from "../src/components/Screen";
 import { useStockSearch } from "../src/hooks/useStockSearch";
+import { useDisclosureStore } from "../src/store/disclosureStore";
 import { typography } from "../src/theme/typography";
 import { useTheme } from "../src/theme/useTheme";
+
+// One-time gate, the first time a user reaches this screen: an active tap
+// to confirm "not a prediction," not just a passive banner they can scroll
+// past without reading. Deliberately a plain confirm button rather than a
+// swipe gesture — this app already hit real gesture-reliability bugs on
+// physical devices this same build cycle, and a launch-blocking modal is
+// the wrong place to risk that class of bug again.
+function PatternLabGate() {
+  const { colors } = useTheme();
+  const acknowledge = useDisclosureStore((s) => s.acknowledgePatternLab);
+
+  return (
+    <Modal visible transparent animationType="fade">
+      <View style={styles.gateBackdrop}>
+        <View style={[styles.gateCard, { backgroundColor: colors.surface }]}>
+          <Ionicons name="analytics-outline" size={30} color={colors.accent} style={styles.gateIcon} />
+          <Text style={[typography.cardTitle, styles.gateTitle, { color: colors.text }]}>
+            Before you dive in
+          </Text>
+          <Text style={[typography.body, styles.gateBody, { color: colors.textMuted }]}>
+            Pattern Lab runs real statistics on historical data — but it is not a prediction, and it is not
+            financial advice. A model output can look precise and still be wrong. Every number here describes
+            the past; none of it tells you what a stock will do next.
+          </Text>
+          <Pressable
+            onPress={acknowledge}
+            style={[styles.gateButton, { backgroundColor: colors.primary }]}
+          >
+            <Text style={[typography.body, { color: colors.onPrimary, fontWeight: "700" }]}>
+              I understand — continue
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 export default function PatternLabScreen() {
   const { colors } = useTheme();
@@ -30,6 +69,8 @@ export default function PatternLabScreen() {
   const [query, setQuery] = useState("");
   const { results, loading: searching } = useStockSearch(query);
   const { symbol: deepLinkSymbol } = useLocalSearchParams<{ symbol?: string }>();
+  const disclosuresHydrated = useDisclosureStore((s) => s.isHydrated);
+  const acknowledgedPatternLab = useDisclosureStore((s) => s.acknowledgedPatternLab);
 
   // Arriving here from a stock's Pattern Signal card ("Full breakdown in
   // Pattern Lab") should land already loaded for that same stock, not force
@@ -64,6 +105,8 @@ export default function PatternLabScreen() {
           ),
         }}
       />
+
+      {disclosuresHydrated && !acknowledgedPatternLab ? <PatternLabGate /> : null}
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoider}
@@ -160,6 +203,12 @@ export default function PatternLabScreen() {
 }
 
 const styles = StyleSheet.create({
+  gateBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 },
+  gateCard: { borderRadius: 20, padding: 24, alignItems: "center" },
+  gateIcon: { marginBottom: 4 },
+  gateTitle: { marginTop: 10, marginBottom: 10 },
+  gateBody: { textAlign: "center", lineHeight: 21, marginBottom: 20 },
+  gateButton: { width: "100%", paddingVertical: 15, borderRadius: 12, alignItems: "center" },
   keyboardAvoider: { flex: 1 },
   scroll: { paddingBottom: 40 },
   searchBar: {

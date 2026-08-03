@@ -12,6 +12,7 @@ import {
 import { getChart, getExtendedHoursQuote } from "../services/chart";
 import { getFilings } from "../services/sec";
 import { NotFoundError, RateLimitedError, UpstreamTimeoutError } from "../services/errors";
+import { AnthropicNotConfiguredError, narrateInsights, narrateNews } from "../services/anthropic";
 
 const VALID_TIMEFRAMES: ChartTimeframe[] = ["1D", "1W", "1M", "6M", "YTD", "1Y", "5Y", "MAX"];
 const VALID_SCREENERS = ["gainers", "losers", "52w-highs"] as const;
@@ -213,5 +214,79 @@ stocksRouter.get("/:symbol/filings", async (req, res) => {
     res.json(filings);
   } catch (err) {
     handleError("filings", err, res);
+  }
+});
+
+function handleAnthropicError(context: string, err: unknown, res: Response) {
+  const error = err instanceof Error ? err : new Error(String(err));
+  console.error(`[stocks:${context}] ${error.name}: ${error.message}`);
+  if (error instanceof AnthropicNotConfiguredError) {
+    res.status(503).json({ error: error.message, code: "anthropic_not_configured" });
+  } else {
+    res.status(502).json({ error: `AI summary is unavailable right now: ${error.message}` });
+  }
+}
+
+interface InsightsSummaryBody {
+  riskScore: number;
+  volatilityWeight: number;
+  betaWeight: number;
+  valuationWeight: number;
+  annualizedVolatilityPct: number;
+  rangeLow: number;
+  rangeCurrent: number;
+  rangeHigh: number;
+}
+
+// Opt-in "Summarize" button on the AI Insights tab. The risk score and
+// probabilistic range are already computed client-side (statistics.ts) from
+// real data — this just explains those already-computed numbers in plain
+// language, the same "narrate, don't invent" pattern as Pattern Lab.
+stocksRouter.post("/:symbol/insights-summary", async (req, res) => {
+  const symbol = req.params.symbol.toUpperCase();
+  const body = req.body as Partial<InsightsSummaryBody>;
+  if (typeof body.riskScore !== "number" || typeof body.annualizedVolatilityPct !== "number") {
+    res.status(400).json({ error: "riskScore and annualizedVolatilityPct are required" });
+    return;
+  }
+  try {
+    const summary = await narrateInsights({
+      symbol,
+      riskScore: body.riskScore,
+      volatilityWeight: body.volatilityWeight ?? 0,
+      betaWeight: body.betaWeight ?? 0,
+      valuationWeight: body.valuationWeight ?? 0,
+      annualizedVolatilityPct: body.annualizedVolatilityPct,
+      rangeLow: body.rangeLow ?? 0,
+      rangeCurrent: body.rangeCurrent ?? 0,
+      rangeHigh: body.rangeHigh ?? 0,
+    });
+    res.json({ summary });
+  } catch (err) {
+    handleAnthropicError("insights-summary", err, res);
+  }
+});
+
+// Opt-in "Summarize" button on the News tab. Fetches the same news already
+// shown in the list and summarizes what it actually reports — no sentiment
+// invention, no trading signal.
+stocksRouter.get("/:symbol/news-summary", async (req, res) => {
+  const symbol = req.params.symbol.toUpperCase();
+  try {
+    const news = await getNews(symbol);
+    const articles = news.slice(0, 10).map((a) => ({
+      headline: a.headline,
+      summary: a.summary,
+      source: a.source,
+      datetime: a.datetime,
+    }));
+    if (articles.length === 0) {
+      res.status(404).json({ error: "No recent news to summarize for this stock." });
+      return;
+    }
+    const summary = await narrateNews({ symbol, articles });
+    res.json({ summary });
+  } catch (err) {
+    handleAnthropicError("news-summary", err, res);
   }
 });

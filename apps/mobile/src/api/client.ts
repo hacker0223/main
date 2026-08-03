@@ -227,3 +227,27 @@ export function fetchDevilsAdvocate(
 ): Promise<DevilsAdvocateResponse> {
   return apiPost("/api/pattern-lab/devils-advocate", { chartDescription, userThesis });
 }
+
+// --- Opt-in AI summaries -------------------------------------------------
+// Both mirror Pattern Lab's "narrate the already-computed numbers, don't
+// invent new ones" pattern, but as their own explicit "Summarize" buttons
+// rather than auto-firing, matching the app's cost-conscious default.
+
+export interface InsightsSummaryRequest {
+  riskScore: number;
+  volatilityWeight: number;
+  betaWeight: number;
+  valuationWeight: number;
+  annualizedVolatilityPct: number;
+  rangeLow: number;
+  rangeCurrent: number;
+  rangeHigh: number;
+}
+
+export function fetchInsightsSummary(symbol: string, body: InsightsSummaryRequest): Promise<{ summary: string }> {
+  return apiPost(`/api/stocks/${encodeURIComponent(symbol)}/insights-summary`, body);
+}
+
+export function fetchNewsSummary(symbol: string): Promise<{ summary: string }> {
+  return apiGet(`/api/stocks/${encodeURIComponent(symbol)}/news-summary`);
+}

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { ErrorState } from "../../components/ErrorState";
-import { SectionHeading } from "../../components/SectionHeading";
+import { InfoDot } from "../../components/InfoDot";
 import { Skeleton } from "../../components/Skeleton";
 import { useChart } from "../../hooks/useChart";
 import { typography } from "../../theme/typography";
@@ -12,6 +12,25 @@ import {
   calculateMovingAverages,
   calculateRSI,
 } from "./technicals";
+
+const DEFS = {
+  rsi: "The Relative Strength Index is a momentum gauge from 0 to 100 based on recent gains versus losses. Above 70 is often called “overbought” (may be due for a pullback), below 30 “oversold” (may be due for a bounce). It measures momentum — it is not a buy or sell signal.",
+  macd: "MACD (Moving Average Convergence/Divergence) compares a faster and a slower moving average to gauge momentum. When the MACD line sits above its signal line, short-term momentum is trending up; below it, momentum is trending down.",
+  ma: "A moving average is the average closing price over a set number of days (e.g. the last 50), updated daily. It smooths out day-to-day noise to reveal the trend. Price trading above its moving average is generally read as an uptrend; below it, a downtrend.",
+  bollinger: "Bollinger Bands are drawn above and below a 20-day moving average, sized by recent volatility. When price pushes against the upper or lower band it is stretched relative to its recent range — not necessarily a reversal, just a stretch.",
+};
+
+// Section heading with an inline "(i)" so a beginner can learn the metric
+// in place instead of leaving to the glossary.
+function InfoHeading({ title, definition }: { title: string; definition: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.infoHeading}>
+      <Text style={[typography.sectionTitle, { color: colors.text }]}>{title}</Text>
+      <InfoDot title={title} definition={definition} size={17} />
+    </View>
+  );
+}
 
 export function TechnicalsTab({ symbol }: { symbol: string | undefined }) {
   const { colors } = useTheme();
@@ -59,7 +78,7 @@ export function TechnicalsTab({ symbol }: { symbol: string | undefined }) {
         prediction. Pattern detection, not forecasting.
       </Text>
 
-      <SectionHeading title="RSI (14)" />
+      <InfoHeading title="RSI (14)" definition={DEFS.rsi} />
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         {rsi === null ? (
           <Text style={[typography.caption, { color: colors.textMuted }]}>Not enough data.</Text>
@@ -81,7 +100,7 @@ export function TechnicalsTab({ symbol }: { symbol: string | undefined }) {
         )}
       </View>
 
-      <SectionHeading title="MACD (12, 26, 9)" />
+      <InfoHeading title="MACD (12, 26, 9)" definition={DEFS.macd} />
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         {macd === null ? (
           <Text style={[typography.caption, { color: colors.textMuted }]}>Not enough data.</Text>
@@ -105,7 +124,7 @@ export function TechnicalsTab({ symbol }: { symbol: string | undefined }) {
         )}
       </View>
 
-      <SectionHeading title="Moving averages" />
+      <InfoHeading title="Moving averages" definition={DEFS.ma} />
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <MaRow label="Price vs SMA 20" price={currentPrice} ma={mas.sma20} colors={colors} />
         <MaRow label="Price vs SMA 50" price={currentPrice} ma={mas.sma50} colors={colors} />
@@ -114,7 +133,7 @@ export function TechnicalsTab({ symbol }: { symbol: string | undefined }) {
 
       {bands ? (
         <>
-          <SectionHeading title="Bollinger Bands (20, 2σ)" />
+          <InfoHeading title="Bollinger Bands (20, 2σ)" definition={DEFS.bollinger} />
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Stat label="Upper band" value={`$${bands.upper.toFixed(2)}`} colors={colors} />
             <Stat label="Middle (SMA 20)" value={`$${bands.middle.toFixed(2)}`} colors={colors} />
@@ -184,6 +203,7 @@ function MaRow({
 }
 
 const styles = StyleSheet.create({
+  infoHeading: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 20, marginBottom: 10 },
   note: { marginBottom: 16, lineHeight: 16 },
   card: { padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 8 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10 },

@@ -5,6 +5,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { PageTitle } from "../src/components/PageTitle";
 import { Screen } from "../src/components/Screen";
 import { AnalysisPanel } from "../src/features/sandbox/components/AnalysisPanel";
+import { ChartBasicsPrimer } from "../src/features/sandbox/components/ChartBasicsPrimer";
 import { DataSourceSheet } from "../src/features/sandbox/components/DataSourceSheet";
 import { Disclaimer } from "../src/features/sandbox/components/Disclaimer";
 import { IndicatorPanel } from "../src/features/sandbox/components/IndicatorPanel";
@@ -52,7 +53,13 @@ export default function SandboxScreen() {
             headerStyle: { backgroundColor: colors.background },
             headerTintColor: colors.text,
             headerLeft: () => (
-              <Pressable onPress={() => router.back()} hitSlop={12}>
+              <Pressable
+                // When a chart is loaded, Back returns to the source picker
+                // (this same screen's first step) rather than leaving to
+                // Learn — only exit the screen when already on the picker.
+                onPress={() => (s.dataSource ? s.reset() : router.back())}
+                hitSlop={12}
+              >
                 <Ionicons name="chevron-back" size={26} color={colors.primary} />
               </Pressable>
             ),
@@ -71,6 +78,7 @@ export default function SandboxScreen() {
               <PageTitle subtitle="Practice reading price action with no live money or real symbols involved.">
                 Chart Sandbox
               </PageTitle>
+              <ChartBasicsPrimer />
               <DataSourceSheet
                 onBlank={s.loadBlank}
                 onRandom={s.loadRandom}
