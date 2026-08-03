@@ -5,6 +5,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { PageTitle } from "../src/components/PageTitle";
 import { Screen } from "../src/components/Screen";
 import { AnalysisPanel } from "../src/features/sandbox/components/AnalysisPanel";
+import { ChartBasicsPrimer } from "../src/features/sandbox/components/ChartBasicsPrimer";
 import { DataSourceSheet } from "../src/features/sandbox/components/DataSourceSheet";
 import { Disclaimer } from "../src/features/sandbox/components/Disclaimer";
 import { IndicatorPanel } from "../src/features/sandbox/components/IndicatorPanel";
@@ -77,6 +78,7 @@ export default function SandboxScreen() {
               <PageTitle subtitle="Practice reading price action with no live money or real symbols involved.">
                 Chart Sandbox
               </PageTitle>
+              <ChartBasicsPrimer />
               <DataSourceSheet
                 onBlank={s.loadBlank}
                 onRandom={s.loadRandom}

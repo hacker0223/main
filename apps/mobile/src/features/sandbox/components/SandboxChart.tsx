@@ -670,13 +670,26 @@ function Handle({
   }
   const responder = responderRef.current;
 
+  // The touch target (44x44) is Apple's HIG minimum for a comfortably
+  // grabbable control — bigger than the visible dot on purpose, so the
+  // circle stays visually light while still being easy to actually catch
+  // with a finger (beta feedback: handles were hard to grab on a phone).
+  const HIT_SIZE = 44;
   return (
     <View
       {...responder.panHandlers}
-      style={{ position: "absolute", left: x - 14, top: y - 14, width: 28, height: 28, alignItems: "center", justifyContent: "center" }}
+      style={{
+        position: "absolute",
+        left: x - HIT_SIZE / 2,
+        top: y - HIT_SIZE / 2,
+        width: HIT_SIZE,
+        height: HIT_SIZE,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
     >
-      <Svg width={28} height={28}>
-        <Circle cx={14} cy={14} r={7} fill={color} stroke="#FFFFFF" strokeWidth={2} />
+      <Svg width={HIT_SIZE} height={HIT_SIZE}>
+        <Circle cx={HIT_SIZE / 2} cy={HIT_SIZE / 2} r={7} fill={color} stroke="#FFFFFF" strokeWidth={2} />
       </Svg>
     </View>
   );

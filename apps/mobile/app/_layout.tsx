@@ -5,6 +5,7 @@ import { AppState, useColorScheme } from "react-native";
 import { warmUpBackend } from "../src/api/warmup";
 import { ServerWarmingBanner } from "../src/components/ServerWarmingBanner";
 import { useAlertStore } from "../src/store/alertStore";
+import { useDisclosureStore } from "../src/store/disclosureStore";
 import { useOnboardingStore } from "../src/store/onboardingStore";
 import { useWatchlistStore } from "../src/store/watchlistStore";
 
@@ -13,11 +14,13 @@ export default function RootLayout() {
   const hydrate = useOnboardingStore((s) => s.hydrate);
   const hydrateWatchlist = useWatchlistStore((s) => s.hydrate);
   const hydrateAlerts = useAlertStore((s) => s.hydrate);
+  const hydrateDisclosures = useDisclosureStore((s) => s.hydrate);
 
   useEffect(() => {
     hydrate();
     hydrateWatchlist();
     hydrateAlerts();
+    hydrateDisclosures();
 
     // Wake the sleeping free-tier backend the instant the app opens, so the
     // ~20s cold start happens during onboarding/idle rather than while the
@@ -28,7 +31,7 @@ export default function RootLayout() {
       if (state === "active") warmUpBackend();
     });
     return () => sub.remove();
-  }, [hydrate, hydrateWatchlist, hydrateAlerts]);
+  }, [hydrate, hydrateWatchlist, hydrateAlerts, hydrateDisclosures]);
 
   return (
     <>

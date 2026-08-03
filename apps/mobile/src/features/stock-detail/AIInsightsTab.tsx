@@ -2,9 +2,11 @@ import { useMemo } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import type { StockKeyStats } from "@summit/shared";
 import { StyleSheet, Text, View } from "react-native";
+import { fetchInsightsSummary } from "../../api/client";
 import { ErrorState } from "../../components/ErrorState";
 import { SectionHeading } from "../../components/SectionHeading";
 import { Skeleton } from "../../components/Skeleton";
+import { SummarizeCard } from "../../components/SummarizeCard";
 import { useChart } from "../../hooks/useChart";
 import { typography } from "../../theme/typography";
 import { useTheme } from "../../theme/useTheme";
@@ -71,6 +73,24 @@ export function AIInsightsTab({ symbol, keyStats }: { symbol: string | undefined
           why a stock is flagged riskier, so you can judge it yourself.
         </Text>
       </View>
+
+      {symbol ? (
+        <SummarizeCard
+          label="Summarize in plain English"
+          onSummarize={() =>
+            fetchInsightsSummary(symbol, {
+              riskScore: risk.score,
+              volatilityWeight: risk.volatilityContribution,
+              betaWeight: risk.betaContribution,
+              valuationWeight: risk.valuationContribution,
+              annualizedVolatilityPct: Math.round((vol ?? 0) * 1000) / 10,
+              rangeLow: range?.low ?? currentPrice,
+              rangeCurrent: currentPrice,
+              rangeHigh: range?.high ?? currentPrice,
+            }).then((r) => r.summary)
+          }
+        />
+      ) : null}
 
       {range ? (
         <>

@@ -1,11 +1,18 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { CollapsibleText } from "../../../components/CollapsibleText";
+import { InfoDot } from "../../../components/InfoDot";
 import { typography } from "../../../theme/typography";
 import { useTheme } from "../../../theme/useTheme";
 import type { ClassifyResponse } from "../../../api/client";
 
 const HORIZON_LABELS: Record<string, string> = { "5": "5 days", "10": "10 days", "20": "20 days" };
 const CLASS_ORDER = ["up", "down", "flat"] as const;
+
+// The actual methodology, not marketing copy — describes exactly what the
+// training script does (a purged, chronological train/test split), so the
+// "backtested accuracy shown, not hidden" claim holds up to scrutiny.
+const METHODOLOGY =
+  "Accuracy is measured on a genuinely held-out test set: windows are sorted chronologically and the most recent slice is set aside for testing before any training happens. Training windows whose outcome period overlaps the test period are then dropped entirely (a \"purged\" split) — without this, information from the test period can leak into training through overlapping windows, inflating accuracy. The model never sees the test windows, or anything whose outcome depends on them, during training. This is the same class of technique used to avoid lookahead bias in real quantitative backtesting.";
 
 export function ClassifierPanel({
   data,
@@ -57,9 +64,12 @@ export function ClassifierPanel({
                 <Text style={[typography.caption, { color: colors.text, fontWeight: "600" }]}>
                   {HORIZON_LABELS[horizon] ?? `${horizon} days`}
                 </Text>
-                <Text style={[typography.micro, { color: colors.textMuted }]}>
-                  backtested accuracy {(result.backtested_accuracy * 100).toFixed(0)}%
-                </Text>
+                <View style={styles.accuracyRow}>
+                  <Text style={[typography.micro, { color: colors.textMuted }]}>
+                    backtested accuracy {(result.backtested_accuracy * 100).toFixed(0)}%
+                  </Text>
+                  <InfoDot title="How accuracy is measured" definition={METHODOLOGY} size={13} />
+                </View>
               </View>
               {CLASS_ORDER.map((cls) => {
                 const p = result.probabilities[cls] ?? 0;
@@ -79,7 +89,7 @@ export function ClassifierPanel({
           ))}
 
           {data.narration ? (
-            <Text style={[typography.body, styles.narration, { color: colors.text }]}>{data.narration}</Text>
+            <CollapsibleText text={data.narration} style={styles.narration} />
           ) : data.narrationError ? (
             <Text style={[typography.caption, styles.narrationError, { color: colors.textMuted }]}>
               AI narration unavailable: {data.narrationError}
@@ -106,6 +116,7 @@ const styles = StyleSheet.create({
   patience: { marginBottom: 10, lineHeight: 16, fontStyle: "italic" },
   horizonBlock: { marginBottom: 14 },
   horizonHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  accuracyRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   probRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
   probLabel: { width: 36, textTransform: "capitalize" },
   track: { flex: 1, height: 8, borderRadius: 4, overflow: "hidden" },

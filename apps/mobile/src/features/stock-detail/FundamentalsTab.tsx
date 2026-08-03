@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "../../components/ErrorState";
 import { InfoDot } from "../../components/InfoDot";
 import { Skeleton } from "../../components/Skeleton";
@@ -6,6 +8,7 @@ import { useFundamentals } from "../../hooks/useFundamentals";
 import { typography } from "../../theme/typography";
 import { useTheme } from "../../theme/useTheme";
 import { formatCompactNumber } from "./format";
+import type { InsiderTransaction } from "@summit/shared";
 
 // Plain-English definitions looked up by line-item label (case-insensitive,
 // partial match) so beginners can tap a "(i)" instead of guessing.
@@ -39,6 +42,7 @@ function InfoHeading({ title, definition }: { title: string; definition: string 
 export function FundamentalsTab({ symbol }: { symbol: string | undefined }) {
   const { colors } = useTheme();
   const fundamentals = useFundamentals(symbol);
+  const [selectedInsider, setSelectedInsider] = useState<string | null>(null);
 
   if (fundamentals.loading) {
     return (
@@ -109,9 +113,14 @@ export function FundamentalsTab({ symbol }: { symbol: string | undefined }) {
           />
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {data.insiderTransactions.slice(0, 6).map((t, i, arr) => (
-              <View
+              <Pressable
                 key={`${t.name}-${t.transactionDate}-${i}`}
-                style={[styles.insiderRow, i < arr.length - 1 ? styles.rowDivider : null, { borderColor: colors.border }]}
+                onPress={() => setSelectedInsider(t.name)}
+                style={({ pressed }) => [
+                  styles.insiderRow,
+                  i < arr.length - 1 ? styles.rowDivider : null,
+                  { borderColor: colors.border, opacity: pressed ? 0.6 : 1 },
+                ]}
               >
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.cardTitle, { color: colors.text }]}>{t.name}</Text>
@@ -128,15 +137,77 @@ export function FundamentalsTab({ symbol }: { symbol: string | undefined }) {
                   {t.change >= 0 ? "+" : ""}
                   {t.change.toLocaleString()} sh
                 </Text>
-              </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={styles.insiderChevron} />
+              </Pressable>
             ))}
             <Text style={[typography.micro, styles.attribution, { color: colors.textMuted }]}>
-              Publicly disclosed SEC filings — not investment advice.
+              Tap a name to see their other disclosed activity in this stock. Publicly disclosed SEC filings —
+              not investment advice.
             </Text>
           </View>
         </>
       ) : null}
+
+      {selectedInsider ? (
+        <InsiderProfileModal
+          name={selectedInsider}
+          allTransactions={data.insiderTransactions}
+          onClose={() => setSelectedInsider(null)}
+        />
+      ) : null}
     </View>
+  );
+}
+
+function InsiderProfileModal({
+  name,
+  allTransactions,
+  onClose,
+}: {
+  name: string;
+  allTransactions: InsiderTransaction[];
+  onClose: () => void;
+}) {
+  const { colors } = useTheme();
+  const theirs = allTransactions.filter((t) => t.name === name);
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalBackdrop} onPress={onClose}>
+        <Pressable style={[styles.modalCard, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
+          <View style={styles.modalHeaderRow}>
+            <Text style={[typography.cardTitle, styles.modalTitle, { color: colors.text }]} numberOfLines={2}>
+              {name}
+            </Text>
+            <Pressable onPress={onClose} hitSlop={10}>
+              <Ionicons name="close" size={22} color={colors.textMuted} />
+            </Pressable>
+          </View>
+          <Text style={[typography.micro, styles.modalNote, { color: colors.textMuted }]}>
+            Every disclosed transaction by this person for this stock in the data currently loaded — not a
+            full cross-company history, which isn't available from this data source.
+          </Text>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {theirs.map((t, i) => (
+              <View
+                key={`${t.transactionDate}-${i}`}
+                style={[styles.insiderRow, i < theirs.length - 1 ? styles.rowDivider : null, { borderColor: colors.border }]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.caption, { color: colors.textMuted }]}>
+                    {new Date(t.transactionDate).toLocaleDateString()}
+                  </Text>
+                </View>
+                <Text style={[typography.cardTitle, { color: t.change >= 0 ? colors.positive : colors.negative }]}>
+                  {t.change >= 0 ? "+" : ""}
+                  {t.change.toLocaleString()} sh
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -172,5 +243,11 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12, paddingHorizontal: 12 },
   rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth },
   insiderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12, paddingHorizontal: 12 },
-  attribution: { paddingHorizontal: 12, paddingBottom: 10 },
+  insiderChevron: { marginLeft: 8 },
+  attribution: { paddingHorizontal: 12, paddingTop: 4, paddingBottom: 10, lineHeight: 15 },
+  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 24 },
+  modalCard: { borderRadius: 18, padding: 18, maxHeight: "70%" },
+  modalHeaderRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 },
+  modalTitle: { flex: 1 },
+  modalNote: { marginBottom: 12, lineHeight: 15 },
 });
