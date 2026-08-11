@@ -76,6 +76,22 @@ export default function LearnScreen() {
               Find real historical analogs and a backtested probability estimate.
             </Text>
           </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/simulator")}
+            style={({ pressed }) => [
+              styles.toolCard,
+              { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <View style={[styles.toolIcon, { backgroundColor: colors.primary }]}>
+              <Ionicons name="time-outline" size={18} color={colors.onPrimary} />
+            </View>
+            <Text style={[typography.cardTitle, { color: colors.text }]}>Time Machine</Text>
+            <Text style={[typography.caption, styles.toolSummary, { color: colors.textMuted }]} numberOfLines={2}>
+              Invest fake money at any point in real market history and fast-forward.
+            </Text>
+          </Pressable>
         </View>
 
         <SectionHeading title="Glossary" />

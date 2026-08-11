@@ -8,6 +8,7 @@ import type {
   StockSearchResult,
 } from "@summit/shared";
 
+import { useAuthStore } from "../store/authStore";
 import { useServerStatus } from "../store/serverStatusStore";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
@@ -84,6 +85,40 @@ async function apiPost<T>(path: string, body: unknown, timeoutMs = 25_000): Prom
     throw new Error(responseBody.error || `Request failed: ${res.status}`);
   }
   markServerAwake();
+  return res.json() as Promise<T>;
+}
+
+function authHeader(): Record<string, string> {
+  const token = useAuthStore.getState().session?.access_token;
+  if (!token) throw new Error("Sign in to use this feature.");
+  return { Authorization: `Bearer ${token}` };
+}
+
+// Simulator routes are all authenticated — a separate pair of helpers
+// rather than adding an optional-headers param to apiGet/apiPost above,
+// since every other caller of those never needs auth and shouldn't have to
+// think about it.
+async function apiAuthGet<T>(path: string): Promise<T> {
+  if (!API_URL) throw new Error("Can't reach the server — app isn't configured with a backend URL.");
+  const res = await fetch(`${API_URL}${path}`, { headers: authHeader() });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed: ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function apiAuthPost<T>(path: string, body: unknown = {}): Promise<T> {
+  if (!API_URL) throw new Error("Can't reach the server — app isn't configured with a backend URL.");
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const responseBody = await res.json().catch(() => ({}));
+    throw new Error(responseBody.error || `Request failed: ${res.status}`);
+  }
   return res.json() as Promise<T>;
 }
 
@@ -250,4 +285,87 @@ export function fetchInsightsSummary(symbol: string, body: InsightsSummaryReques
 
 export function fetchNewsSummary(symbol: string): Promise<{ summary: string }> {
   return apiGet(`/api/stocks/${encodeURIComponent(symbol)}/news-summary`);
+}
+
+// --- Historical Simulator -------------------------------------------------
+// All authenticated; the server is the sole source of truth for prices,
+// trades, and valuations (see apps/api/src/services/simulatorEngine.ts) —
+// the client only ever sends intent ("buy 10 shares", "advance a month"),
+// never a price or a result.
+
+export interface SimulatorRun {
+  id: string;
+  user_id: string;
+  mode: "single" | "portfolio";
+  start_date: string;
+  sim_date: string;
+  initial_cash: number;
+  cash: number;
+  status: "active" | "completed";
+  final_value: number | null;
+  return_pct: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SimulatorHolding {
+  id: string;
+  run_id: string;
+  symbol: string;
+  shares: number;
+  avg_cost: number;
+  currentPrice: number;
+  marketValue: number;
+}
+
+export interface SimulatorRunState {
+  run: SimulatorRun;
+  holdings: SimulatorHolding[];
+  totalValue: number;
+}
+
+export function fetchSimulatorRuns(): Promise<SimulatorRun[]> {
+  return apiAuthGet("/api/simulator/runs");
+}
+
+export function createSimulatorRun(input: {
+  mode: "single" | "portfolio";
+  startDate: string;
+  initialCash: number;
+}): Promise<SimulatorRun> {
+  return apiAuthPost("/api/simulator/runs", input);
+}
+
+export function fetchSimulatorRunState(runId: string): Promise<SimulatorRunState> {
+  return apiAuthGet(`/api/simulator/runs/${encodeURIComponent(runId)}`);
+}
+
+export function tradeSimulatorRun(
+  runId: string,
+  input: { symbol: string; side: "buy" | "sell"; shares: number }
+): Promise<SimulatorRunState> {
+  return apiAuthPost(`/api/simulator/runs/${encodeURIComponent(runId)}/trade`, input);
+}
+
+export function advanceSimulatorRun(
+  runId: string,
+  target: { by: "day" | "week" | "month" | "year" } | { date: string }
+): Promise<SimulatorRunState> {
+  return apiAuthPost(`/api/simulator/runs/${encodeURIComponent(runId)}/advance`, target);
+}
+
+export function completeSimulatorRun(runId: string): Promise<SimulatorRunState> {
+  return apiAuthPost(`/api/simulator/runs/${encodeURIComponent(runId)}/complete`);
+}
+
+export interface SimulatorLeaderboardEntry {
+  id: string;
+  mode: "single" | "portfolio";
+  start_date: string;
+  return_pct: number;
+  final_value: number;
+}
+
+export function fetchSimulatorLeaderboard(): Promise<SimulatorLeaderboardEntry[]> {
+  return apiAuthGet("/api/simulator/leaderboard");
 }
