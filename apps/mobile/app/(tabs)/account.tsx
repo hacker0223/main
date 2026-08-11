@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { AuthCard } from "../../src/components/AuthCard";
 import { Button } from "../../src/components/Button";
 import { PageTitle } from "../../src/components/PageTitle";
 import { Screen } from "../../src/components/Screen";
@@ -46,6 +47,8 @@ export default function AccountScreen() {
     <Screen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <PageTitle>Account</PageTitle>
+
+        <AuthCard />
 
         <SectionHeading title="Your profile" />
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
