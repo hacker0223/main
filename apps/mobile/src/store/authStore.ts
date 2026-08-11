@@ -15,6 +15,7 @@ interface AuthState {
   hydrate: () => Promise<void>;
   signUp: (email: string, password: string) => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<boolean>;
+  signInWithApple: (identityToken: string, nonce: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
@@ -64,6 +65,25 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     set({ loading: true, error: null });
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      set({ loading: false, error: error.message });
+      return false;
+    }
+    set({ loading: false, session: data.session, user: data.user });
+    return true;
+  },
+
+  signInWithApple: async (identityToken, nonce) => {
+    if (!isSupabaseConfigured || !supabase) {
+      set({ error: "Accounts aren't set up yet." });
+      return false;
+    }
+    set({ loading: true, error: null });
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: "apple",
+      token: identityToken,
+      nonce,
+    });
     if (error) {
       set({ loading: false, error: error.message });
       return false;

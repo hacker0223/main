@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
+import { AppleSignInButton, useAppleSignInAvailable } from "./AppleSignInButton";
 import { Button } from "./Button";
 import { useAuthStore } from "../store/authStore";
 import { typography } from "../theme/typography";
@@ -12,6 +13,7 @@ import { useTheme } from "../theme/useTheme";
 export function AuthCard() {
   const { colors } = useTheme();
   const { user, loading, error, signIn, signUp, signOut, clearError } = useAuthStore();
+  const appleAvailable = useAppleSignInAvailable();
   const [mode, setMode] = useState<"signIn" | "signUp">("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,6 +52,17 @@ export function AuthCard() {
       <Text style={[typography.micro, styles.subtitle, { color: colors.textMuted }]}>
         Not required to use Summit — this is only here for whenever a subscription needs a place to attach to.
       </Text>
+
+      {appleAvailable ? (
+        <>
+          <AppleSignInButton />
+          <View style={styles.dividerRow}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[typography.micro, { color: colors.textMuted }]}>or</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
+        </>
+      ) : null}
 
       <TextInput
         value={email}
@@ -98,6 +111,8 @@ export function AuthCard() {
 const styles = StyleSheet.create({
   card: { padding: 16, borderRadius: 14, borderWidth: 1, marginBottom: 20 },
   subtitle: { marginTop: 4, marginBottom: 14, lineHeight: 16 },
+  dividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },
   email: { marginTop: 2, marginBottom: 14 },
   input: { borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 10 },
   error: { marginBottom: 10 },
