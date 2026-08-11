@@ -15,14 +15,18 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://summit-api-hehi.onrender.com",
-        "EXPO_PUBLIC_PATTERN_ENGINE_URL": "https://summit-pattern-engine.onrender.com"
+        "EXPO_PUBLIC_PATTERN_ENGINE_URL": "https://summit-pattern-engine.onrender.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jhnhptnmqlepupjtupva.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_QpQbtSZwSzA_vUdPbh8vtg_w_ZYauhD"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://summit-api-hehi.onrender.com",
-        "EXPO_PUBLIC_PATTERN_ENGINE_URL": "https://summit-pattern-engine.onrender.com"
+        "EXPO_PUBLIC_PATTERN_ENGINE_URL": "https://summit-pattern-engine.onrender.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jhnhptnmqlepupjtupva.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_QpQbtSZwSzA_vUdPbh8vtg_w_ZYauhD"
       }
     }
   },
