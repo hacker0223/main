@@ -97,6 +97,71 @@ export async function getChart(symbol: string, timeframe: ChartTimeframe): Promi
   return cached(`chart:${symbol}:${timeframe}`, ttl, () => fetchCandles(symbol, timeframe));
 }
 
+// Arbitrary-start-date daily history for the historical simulator — Yahoo's
+// period1/period2 params (unix seconds) aren't restricted to the named
+// range buckets above, and Yahoo tracks each symbol's actual first trade
+// date, so a request starting before a stock existed just naturally returns
+// data from whenever it actually started (confirmed by hand against AAPL's
+// 1980 IPO). One fetch covers a whole run's history; cached for hours since
+// completed trading days never change, only "today" does.
+async function fetchHistoricalDaily(symbol: string, fromDate: string): Promise<ChartPoint[]> {
+  const period1 = Math.floor(new Date(`${fromDate}T00:00:00Z`).getTime() / 1000);
+  const period2 = Math.floor(Date.now() / 1000);
+  const url = `${YAHOO_BASE}/${encodeURIComponent(symbol)}?interval=1d&period1=${period1}&period2=${period2}`;
+
+  const res = await fetchWithTimeout(url, { headers: { "User-Agent": "Mozilla/5.0" } }, 15000);
+  if (res.status === 404) {
+    throw new NotFoundError(`Unknown symbol: ${symbol}`);
+  }
+  if (!res.ok) {
+    throw new Error(`Historical chart fetch failed for ${symbol}: ${res.status}`);
+  }
+  const body = (await res.json()) as YahooChartResponse;
+  const result = body.chart.result?.[0];
+  if (!result) return [];
+
+  const { timestamp, indicators } = result;
+  const quote = indicators.quote[0];
+  const points: ChartPoint[] = [];
+  for (let i = 0; i < timestamp.length; i++) {
+    const close = quote.close[i];
+    if (close === null || close === undefined) continue;
+    points.push({
+      timestamp: timestamp[i] * 1000,
+      open: quote.open[i] ?? close,
+      high: quote.high[i] ?? close,
+      low: quote.low[i] ?? close,
+      close,
+      volume: quote.volume[i] ?? 0,
+    });
+  }
+  return points;
+}
+
+export async function getHistoricalDaily(symbol: string, fromDate: string): Promise<ChartPoint[]> {
+  return cached(`historical:${symbol}:${fromDate}`, 6 * 60 * 60_000, () => fetchHistoricalDaily(symbol, fromDate));
+}
+
+// Simulator trades/valuations always need "the price on date X" — markets
+// are closed weekends/holidays, so this walks backward to the most recent
+// trading day at or before the target rather than requiring an exact match.
+// Falls back to the series' very first point when the target predates the
+// whole series — the one case that happens in practice is a run's own
+// start_date landing on a non-trading day (e.g. starting "on" a Saturday),
+// where there's nothing to walk backward TO within the fetched window; the
+// sensible real-world behavior is the same as a market order placed while
+// closed — it fills at the next available open, not an error.
+export function closeOnOrBefore(series: ChartPoint[], dateStr: string): { date: string; close: number } | null {
+  if (series.length === 0) return null;
+  const target = new Date(`${dateStr}T23:59:59Z`).getTime();
+  for (let i = series.length - 1; i >= 0; i--) {
+    if (series[i].timestamp <= target) {
+      return { date: new Date(series[i].timestamp).toISOString().slice(0, 10), close: series[i].close };
+    }
+  }
+  return { date: new Date(series[0].timestamp).toISOString().slice(0, 10), close: series[0].close };
+}
+
 export interface ExtendedHoursQuote {
   marketState: "PRE" | "POST" | "CLOSED";
   price: number;

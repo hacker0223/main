@@ -4,6 +4,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import morgan from "morgan";
 import { stocksRouter } from "./routes/stocks";
 import { patternLabRouter } from "./routes/patternLab";
+import { simulatorRouter } from "./routes/simulator";
 
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -18,6 +19,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/api/stocks", stocksRouter);
 app.use("/api/pattern-lab", patternLabRouter);
+app.use("/api/simulator", simulatorRouter);
 
 // Unknown routes return JSON, not Express's default HTML "Cannot GET /x".
 app.use((_req, res) => {
