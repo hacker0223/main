@@ -193,8 +193,17 @@ export function SandboxChart({
   const backgroundResponderRef = useRef<ReturnType<typeof PanResponder.create> | null>(null);
   if (!backgroundResponderRef.current) {
     backgroundResponderRef.current = PanResponder.create({
-      onStartShouldSetPanResponder: () =>
-        latestRef.current.editable && latestRef.current.selectedCandleIndex === null,
+      // Deliberately NOT gated on selectedCandleIndex === null: a touch that
+      // lands inside a handle's own 44x44 hit box is claimed by that
+      // Handle's own responder before this one is ever asked (they're
+      // siblings, and the topmost view under a touch point wins first
+      // dibs) — so gating this responder on "nothing selected" isn't
+      // needed to protect handle drags, and doing so was the actual bug:
+      // it made every tap-elsewhere-to-deselect, tap-a-different-candle,
+      // and background-pan gesture silently do nothing for as long as any
+      // candle was selected, even though the deselect toggle below was
+      // always correctly implemented.
+      onStartShouldSetPanResponder: () => latestRef.current.editable,
       // Once granted (touch-down on the chart), don't let the parent
       // ScrollView reclaim the gesture mid-drag — trendlines routinely move
       // vertically as much as horizontally, which is exactly the motion a

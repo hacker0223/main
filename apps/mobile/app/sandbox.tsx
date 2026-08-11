@@ -145,9 +145,15 @@ export default function SandboxScreen() {
                   Drag across the chart to place a trendline.
                 </Text>
               ) : s.selectedCandleIndex !== null ? (
-                <Text style={[typography.micro, styles.hint, { color: colors.primary }]}>
-                  Drag the dots to set high, open, close, and low. Tap the candle again to deselect.
-                </Text>
+                <View style={styles.selectedHintRow}>
+                  <Text style={[typography.micro, styles.hintFlex, { color: colors.primary }]}>
+                    Drag the dots to set high, open, close, and low.
+                  </Text>
+                  <Pressable onPress={() => s.selectCandle(null)} hitSlop={8} style={styles.deselectButton}>
+                    <Ionicons name="close-circle" size={15} color={colors.primary} />
+                    <Text style={[typography.micro, { color: colors.primary, fontWeight: "700" }]}>Deselect</Text>
+                  </Pressable>
+                </View>
               ) : (
                 <Text style={[typography.micro, styles.hint, { color: colors.textMuted }]}>
                   Tap a candle to edit it · drag the background to pan
@@ -270,6 +276,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   hint: { marginBottom: 8 },
+  selectedHintRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 },
+  hintFlex: { flex: 1 },
+  deselectButton: { flexDirection: "row", alignItems: "center", gap: 3 },
   zoomRow: { flexDirection: "row", justifyContent: "flex-end", gap: 8, marginBottom: 6 },
   zoomButton: {
     width: 30,

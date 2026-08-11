@@ -65,8 +65,18 @@ export function useSandboxState() {
     error: null,
   });
 
-  const resetViewToFull = useCallback((length: number) => {
-    setViewRange({ start: 0, end: length });
+  // Landing a freshly loaded chart zoomed all the way out (every candle
+  // visible at once) was the other half of the "tight gaps, hard to pick a
+  // candle" beta feedback — an 80-candle random series or a ~126-day
+  // imported stock crams every slot into a few pixels of width by default.
+  // Starting at a capped, comfortably tappable window (anchored to the most
+  // recent candles, same as how real stock charts default) fixes that; the
+  // existing zoom-out control still reaches the full series for anyone who
+  // wants it.
+  const DEFAULT_VISIBLE_CANDLES = 20;
+  const resetViewToDefault = useCallback((length: number) => {
+    const visibleCount = Math.min(length, DEFAULT_VISIBLE_CANDLES);
+    setViewRange({ start: Math.max(0, length - visibleCount), end: length });
   }, []);
 
   const loadBlank = useCallback(() => {
@@ -77,8 +87,8 @@ export function useSandboxState() {
     setSelectedCandleIndex(null);
     setReplay({ active: false, playing: false, visibleCount: next.length, speedMs: 700 });
     setAnalysis({ data: null, loading: false, error: null });
-    resetViewToFull(next.length);
-  }, [resetViewToFull]);
+    resetViewToDefault(next.length);
+  }, [resetViewToDefault]);
 
   const loadRandom = useCallback(() => {
     const next = generateRandomCandles(80);
@@ -88,8 +98,8 @@ export function useSandboxState() {
     setSelectedCandleIndex(null);
     setReplay({ active: false, playing: false, visibleCount: next.length, speedMs: 700 });
     setAnalysis({ data: null, loading: false, error: null });
-    resetViewToFull(next.length);
-  }, [resetViewToFull]);
+    resetViewToDefault(next.length);
+  }, [resetViewToDefault]);
 
   const loadMock = useCallback(
     (seriesId: string) => {
@@ -102,9 +112,9 @@ export function useSandboxState() {
       setSelectedCandleIndex(null);
       setReplay({ active: false, playing: false, visibleCount: series.candles.length, speedMs: 700 });
       setAnalysis({ data: null, loading: false, error: null });
-      resetViewToFull(series.candles.length);
+      resetViewToDefault(series.candles.length);
     },
-    [resetViewToFull]
+    [resetViewToDefault]
   );
 
   // Loads a real stock's actual historical daily candles into the sandbox —
@@ -136,13 +146,13 @@ export function useSandboxState() {
         setSelectedCandleIndex(null);
         setReplay({ active: false, playing: false, visibleCount: next.length, speedMs: 700 });
         setAnalysis({ data: null, loading: false, error: null });
-        resetViewToFull(next.length);
+        resetViewToDefault(next.length);
         setImportState({ loading: false, error: null });
       } catch (err) {
         setImportState({ loading: false, error: (err as Error).message });
       }
     },
-    [resetViewToFull]
+    [resetViewToDefault]
   );
 
   const reset = useCallback(() => {
@@ -246,8 +256,8 @@ export function useSandboxState() {
 
   const exitReplay = useCallback(() => {
     setReplay({ active: false, playing: false, visibleCount: candles.length, speedMs: 700 });
-    resetViewToFull(candles.length);
-  }, [candles.length, resetViewToFull]);
+    resetViewToDefault(candles.length);
+  }, [candles.length, resetViewToDefault]);
 
   const stepReplay = useCallback(
     (delta: number) => {
