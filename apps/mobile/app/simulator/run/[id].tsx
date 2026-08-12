@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
   AuthRequiredError,
   advanceSimulatorRun,
@@ -11,6 +11,7 @@ import {
   type SimulatorRunState,
 } from "../../../src/api/client";
 import { Button } from "../../../src/components/Button";
+import { ConfirmDialog } from "../../../src/components/ConfirmDialog";
 import { DateField } from "../../../src/components/DateField";
 import { ErrorState } from "../../../src/components/ErrorState";
 import { Screen } from "../../../src/components/Screen";
@@ -28,6 +29,7 @@ export default function SimulatorRunScreen() {
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   const load = useCallback(() => {
     if (!id) return;
@@ -179,16 +181,17 @@ export default function SimulatorRunScreen() {
 
         {run.status === "active" ? (
           <View style={styles.completeAction}>
-            <Button
-              label="End run"
-              variant="secondary"
-              onPress={() =>
-                Alert.alert("End this run?", "This locks in your final value and adds it to the leaderboard. You can't undo this.", [
-                  { text: "Cancel", style: "cancel" },
-                  { text: "End run", style: "destructive", onPress: () => runAction(() => completeSimulatorRun(run.id)) },
-                ])
-              }
-              disabled={busy}
+            <Button label="End run" variant="secondary" onPress={() => setConfirmEnd(true)} disabled={busy} />
+            <ConfirmDialog
+              visible={confirmEnd}
+              title="End this run?"
+              message="This locks in your final value and adds it to the leaderboard. You can't undo this."
+              confirmLabel="End run"
+              onCancel={() => setConfirmEnd(false)}
+              onConfirm={() => {
+                setConfirmEnd(false);
+                runAction(() => completeSimulatorRun(run.id));
+              }}
             />
           </View>
         ) : (

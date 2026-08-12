@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ConfirmDialog } from "../src/components/ConfirmDialog";
 import { PageTitle } from "../src/components/PageTitle";
 import { Screen } from "../src/components/Screen";
 import { AnalysisPanel } from "../src/features/sandbox/components/AnalysisPanel";
@@ -18,6 +19,8 @@ import { useTheme } from "../src/theme/useTheme";
 export default function SandboxScreen() {
   const { colors } = useTheme();
   const [showAnnotations, setShowAnnotations] = useState(true);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmNewChart, setConfirmNewChart] = useState(false);
   // While the user is actively drawing a trendline or dragging an OHLC
   // handle, the outer ScrollView must not be allowed to scroll — on a real
   // device its native scroll gesture recognizer can still win a touch away
@@ -118,27 +121,39 @@ export default function SandboxScreen() {
                   label="Clear lines"
                   active={false}
                   disabled={s.drawings.length === 0}
-                  onPress={() =>
-                    Alert.alert("Clear all trendlines?", undefined, [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Clear", style: "destructive", onPress: s.clearDrawings },
-                    ])
-                  }
+                  onPress={() => setConfirmClear(true)}
                   colors={colors}
                 />
                 <ToolButton
                   icon="refresh-outline"
                   label="New chart"
                   active={false}
-                  onPress={() =>
-                    Alert.alert("Start a new chart?", "This resets back to the start of this same chart.", [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Start new", style: "destructive", onPress: s.newChart },
-                    ])
-                  }
+                  onPress={() => setConfirmNewChart(true)}
                   colors={colors}
                 />
               </View>
+
+              <ConfirmDialog
+                visible={confirmClear}
+                title="Clear all trendlines?"
+                confirmLabel="Clear"
+                onCancel={() => setConfirmClear(false)}
+                onConfirm={() => {
+                  setConfirmClear(false);
+                  s.clearDrawings();
+                }}
+              />
+              <ConfirmDialog
+                visible={confirmNewChart}
+                title="Start a new chart?"
+                message="This resets back to the start of this same chart."
+                confirmLabel="Start new"
+                onCancel={() => setConfirmNewChart(false)}
+                onConfirm={() => {
+                  setConfirmNewChart(false);
+                  s.newChart();
+                }}
+              />
 
               {s.drawMode ? (
                 <Text style={[typography.micro, styles.hint, { color: colors.primary }]}>
