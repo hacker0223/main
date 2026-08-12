@@ -34,3 +34,7 @@ services:
         sync: false
       - key: PATTERN_ENGINE_URL
         value: https://summit-pattern-engine.onrender.com # confirmed live; not a secret
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
