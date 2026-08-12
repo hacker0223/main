@@ -78,7 +78,7 @@ export default function SimulatorHomeScreen() {
 
             <Pressable onPress={() => router.push("/simulator/leaderboard")} style={styles.leaderboardLink}>
               <Ionicons name="trophy-outline" size={16} color={colors.primary} />
-              <Text style={[typography.caption, { color: colors.primary, fontWeight: "700" }]}>Leaderboard</Text>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: "700" }]}>Hall of Fame</Text>
             </Pressable>
 
             <SectionHeading title="Your runs" />
@@ -134,7 +134,7 @@ function RunRow({ run, colors }: { run: SimulatorRun; colors: ReturnType<typeof 
   const isUp = (run.return_pct ?? 0) >= 0;
   return (
     <Pressable
-      onPress={() => router.push(`/simulator/${run.id}`)}
+      onPress={() => router.push(`/simulator/run/${run.id}`)}
       style={({ pressed }) => [styles.runRow, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
     >
       <View style={{ flex: 1 }}>

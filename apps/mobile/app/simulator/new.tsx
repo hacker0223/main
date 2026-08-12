@@ -33,7 +33,7 @@ export default function NewSimulatorRunScreen() {
     setError(null);
     try {
       const run = await createSimulatorRun({ mode, startDate, initialCash: cash });
-      router.replace(`/simulator/${run.id}`);
+      router.replace(`/simulator/run/${run.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setLoading(false);

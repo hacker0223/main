@@ -9,16 +9,16 @@ import {
   fetchSimulatorRunState,
   tradeSimulatorRun,
   type SimulatorRunState,
-} from "../../src/api/client";
-import { Button } from "../../src/components/Button";
-import { DateField } from "../../src/components/DateField";
-import { ErrorState } from "../../src/components/ErrorState";
-import { Screen } from "../../src/components/Screen";
-import { SectionHeading } from "../../src/components/SectionHeading";
-import { SignInPrompt } from "../../src/components/SignInPrompt";
-import { useStockSearch } from "../../src/hooks/useStockSearch";
-import { typography } from "../../src/theme/typography";
-import { useTheme } from "../../src/theme/useTheme";
+} from "../../../src/api/client";
+import { Button } from "../../../src/components/Button";
+import { DateField } from "../../../src/components/DateField";
+import { ErrorState } from "../../../src/components/ErrorState";
+import { Screen } from "../../../src/components/Screen";
+import { SectionHeading } from "../../../src/components/SectionHeading";
+import { SignInPrompt } from "../../../src/components/SignInPrompt";
+import { useStockSearch } from "../../../src/hooks/useStockSearch";
+import { typography } from "../../../src/theme/typography";
+import { useTheme } from "../../../src/theme/useTheme";
 
 export default function SimulatorRunScreen() {
   const { colors } = useTheme();
