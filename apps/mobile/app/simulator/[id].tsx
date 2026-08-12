@@ -3,6 +3,7 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
+  AuthRequiredError,
   advanceSimulatorRun,
   completeSimulatorRun,
   fetchSimulatorRunState,
@@ -14,6 +15,7 @@ import { DateField } from "../../src/components/DateField";
 import { ErrorState } from "../../src/components/ErrorState";
 import { Screen } from "../../src/components/Screen";
 import { SectionHeading } from "../../src/components/SectionHeading";
+import { SignInPrompt } from "../../src/components/SignInPrompt";
 import { useStockSearch } from "../../src/hooks/useStockSearch";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
@@ -24,6 +26,7 @@ export default function SimulatorRunScreen() {
   const [state, setState] = useState<SimulatorRunState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
@@ -31,7 +34,10 @@ export default function SimulatorRunScreen() {
     setError(null);
     return fetchSimulatorRunState(id)
       .then(setState)
-      .catch((err: Error) => setError(err.message))
+      .catch((err: Error) => {
+        if (err instanceof AuthRequiredError) setAuthRequired(true);
+        else setError(err.message);
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -46,7 +52,8 @@ export default function SimulatorRunScreen() {
       const next = await action();
       setState(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      if (err instanceof AuthRequiredError) setAuthRequired(true);
+      else setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
@@ -57,6 +64,15 @@ export default function SimulatorRunScreen() {
       <Screen>
         <Stack.Screen options={{ headerShown: true, title: "Run" }} />
         <ActivityIndicator color={colors.primary} style={styles.loading} />
+      </Screen>
+    );
+  }
+
+  if (authRequired) {
+    return (
+      <Screen>
+        <Stack.Screen options={{ headerShown: true, title: "Run" }} />
+        <SignInPrompt message="Your session needs a refresh — sign in again to keep going." />
       </Screen>
     );
   }

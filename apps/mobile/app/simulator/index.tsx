@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { fetchSimulatorRuns, type SimulatorRun } from "../../src/api/client";
-import { Button } from "../../src/components/Button";
+import { AuthRequiredError, fetchSimulatorRuns, type SimulatorRun } from "../../src/api/client";
 import { ErrorState } from "../../src/components/ErrorState";
 import { PageTitle } from "../../src/components/PageTitle";
 import { Screen } from "../../src/components/Screen";
 import { SectionHeading } from "../../src/components/SectionHeading";
+import { SignInPrompt } from "../../src/components/SignInPrompt";
 import { useAuthStore } from "../../src/store/authStore";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
@@ -18,6 +18,7 @@ export default function SimulatorHomeScreen() {
   const [runs, setRuns] = useState<SimulatorRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(() => {
@@ -26,9 +27,13 @@ export default function SimulatorHomeScreen() {
       return;
     }
     setError(null);
+    setAuthRequired(false);
     return fetchSimulatorRuns()
       .then(setRuns)
-      .catch((err: Error) => setError(err.message))
+      .catch((err: Error) => {
+        if (err instanceof AuthRequiredError) setAuthRequired(true);
+        else setError(err.message);
+      })
       .finally(() => {
         setLoading(false);
         setRefreshing(false);
@@ -50,15 +55,8 @@ export default function SimulatorHomeScreen() {
           Time Machine
         </PageTitle>
 
-        {!user ? (
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[typography.body, { color: colors.text }]}>
-              Sign in to start a run — your progress and leaderboard spot are tied to your account.
-            </Text>
-            <View style={styles.signInAction}>
-              <Button label="Go to Account" onPress={() => router.push("/(tabs)/account")} />
-            </View>
-          </View>
+        {!user || authRequired ? (
+          <SignInPrompt message="Sign in to start a run — your progress and leaderboard spot are tied to your account." />
         ) : (
           <>
             <View style={styles.startRow}>
@@ -161,8 +159,6 @@ function RunRow({ run, colors }: { run: SimulatorRun; colors: ReturnType<typeof 
 
 const styles = StyleSheet.create({
   scroll: { paddingBottom: 40 },
-  card: { padding: 16, borderRadius: 14, borderWidth: 1, marginBottom: 20 },
-  signInAction: { marginTop: 14 },
   startRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
   startCard: { flex: 1, padding: 14, borderRadius: 14, borderWidth: 1.5 },
   startIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 8 },

@@ -8,7 +8,7 @@ import type {
   StockSearchResult,
 } from "@summit/shared";
 
-import { useAuthStore } from "../store/authStore";
+import { supabase } from "../lib/supabase";
 import { useServerStatus } from "../store/serverStatusStore";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
@@ -88,11 +88,25 @@ async function apiPost<T>(path: string, body: unknown, timeoutMs = 25_000): Prom
   return res.json() as Promise<T>;
 }
 
-function authHeader(): Record<string, string> {
-  const token = useAuthStore.getState().session?.access_token;
-  if (!token) throw new Error("Sign in to use this feature.");
+// Asks Supabase's own client for the live session rather than trusting our
+// Zustand mirror (authStore) — the SDK owns token refresh internally and
+// getSession() hands back a valid, current token (refreshing under the hood
+// if needed), so this can't go stale the way a cached copy can. A prior
+// version read the cached copy directly and could throw "sign in again"
+// even while genuinely signed in, whenever that mirror drifted from
+// Supabase's actual session for any reason.
+async function authHeader(): Promise<Record<string, string>> {
+  if (!supabase) throw new AuthRequiredError("Accounts aren't set up yet.");
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new AuthRequiredError("Sign in to use this feature.");
   return { Authorization: `Bearer ${token}` };
 }
+
+// A distinct error type (not just a message string) so screens can tell
+// "you're not signed in" apart from a genuine server/network failure and
+// show a calm sign-in prompt instead of a scary "couldn't load" error box.
+export class AuthRequiredError extends Error {}
 
 // Simulator routes are all authenticated — a separate pair of helpers
 // rather than adding an optional-headers param to apiGet/apiPost above,
@@ -100,10 +114,11 @@ function authHeader(): Record<string, string> {
 // think about it.
 async function apiAuthGet<T>(path: string): Promise<T> {
   if (!API_URL) throw new Error("Can't reach the server — app isn't configured with a backend URL.");
-  const res = await fetch(`${API_URL}${path}`, { headers: authHeader() });
+  const res = await fetch(`${API_URL}${path}`, { headers: await authHeader() });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Request failed: ${res.status}`);
+    const message = body.error || `Request failed: ${res.status}`;
+    throw res.status === 401 ? new AuthRequiredError(message) : new Error(message);
   }
   return res.json() as Promise<T>;
 }
@@ -112,12 +127,13 @@ async function apiAuthPost<T>(path: string, body: unknown = {}): Promise<T> {
   if (!API_URL) throw new Error("Can't reach the server — app isn't configured with a backend URL.");
   const res = await fetch(`${API_URL}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const responseBody = await res.json().catch(() => ({}));
-    throw new Error(responseBody.error || `Request failed: ${res.status}`);
+    const message = responseBody.error || `Request failed: ${res.status}`;
+    throw res.status === 401 ? new AuthRequiredError(message) : new Error(message);
   }
   return res.json() as Promise<T>;
 }

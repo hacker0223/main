@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
-import { fetchSimulatorLeaderboard, type SimulatorLeaderboardEntry } from "../../src/api/client";
+import { AuthRequiredError, fetchSimulatorLeaderboard, type SimulatorLeaderboardEntry } from "../../src/api/client";
 import { ErrorState } from "../../src/components/ErrorState";
 import { PageTitle } from "../../src/components/PageTitle";
 import { Screen } from "../../src/components/Screen";
+import { SignInPrompt } from "../../src/components/SignInPrompt";
 import { typography } from "../../src/theme/typography";
 import { useTheme } from "../../src/theme/useTheme";
 
@@ -14,13 +15,18 @@ export default function SimulatorLeaderboardScreen() {
   const [entries, setEntries] = useState<SimulatorLeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
 
   const load = () => {
     setLoading(true);
     setError(null);
+    setAuthRequired(false);
     fetchSimulatorLeaderboard()
       .then(setEntries)
-      .catch((err: Error) => setError(err.message))
+      .catch((err: Error) => {
+        if (err instanceof AuthRequiredError) setAuthRequired(true);
+        else setError(err.message);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -36,6 +42,8 @@ export default function SimulatorLeaderboardScreen() {
 
         {loading ? (
           <ActivityIndicator color={colors.primary} style={styles.loading} />
+        ) : authRequired ? (
+          <SignInPrompt message="Sign in to see the leaderboard." />
         ) : error ? (
           <ErrorState message={error} onRetry={load} />
         ) : entries.length === 0 ? (
