@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { ChartTimeframe } from "@summit/shared";
-import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { showAlert } from "../../src/lib/showAlert";
 import { fetchNewsSummary } from "../../src/api/client";
 import { CompanyLogo } from "../../src/components/CompanyLogo";
 import { ErrorState } from "../../src/components/ErrorState";
@@ -490,7 +491,7 @@ function NewsTab({ symbol }: { symbol: string | undefined }) {
 
   const openArticle = (url: string) => {
     Linking.openURL(url).catch(() => {
-      Alert.alert("Couldn't open link", "This article's link looks broken.");
+      showAlert("Couldn't open link", "This article's link looks broken.");
     });
   };
 

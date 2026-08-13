@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { showAlert } from "../../src/lib/showAlert";
 import { AuthCard } from "../../src/components/AuthCard";
 import { Button } from "../../src/components/Button";
 import { PageTitle } from "../../src/components/PageTitle";
@@ -40,7 +41,7 @@ export default function AccountScreen() {
     Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Summit%20support`).catch(() =>
       // No mail app configured (common on simulators/desktops) — still
       // give the user the address instead of failing silently.
-      Alert.alert("Contact support", `Email us at ${SUPPORT_EMAIL}`)
+      showAlert("Contact support", `Email us at ${SUPPORT_EMAIL}`)
     );
 
   return (

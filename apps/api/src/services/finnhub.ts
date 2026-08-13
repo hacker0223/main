@@ -100,10 +100,27 @@ export interface FinnhubNewsItem {
 export async function searchStocks(query: string): Promise<StockSearchResult[]> {
   return cached(`search:${query.toLowerCase()}`, 60_000, async () => {
     const data = await finnhubGet<FinnhubSearchResult>("/search", { q: query });
-    return data.result
+    const filtered = data.result
       .filter((r) => !r.symbol.includes(".") && (r.type === "Common Stock" || r.type === "ETP"))
-      .slice(0, 25)
       .map((r) => ({ symbol: r.symbol, companyName: r.description, type: r.type }));
+
+    // Finnhub can return the same ticker more than once with different
+    // descriptions — searching "CCC" really does return two CCC rows, one
+    // truncated/uppercased ("CCC INTELLIGENT SOLUTIONS HO") and one full
+    // ("CCC Intelligent Solutions Holdings Inc"). Every consumer of this
+    // list keys React rows by symbol, and React treats duplicate keys as
+    // unsupported (children "may be duplicated and/or omitted"), so a tap
+    // on one row could act on the other. Dedupe here rather than in each
+    // screen, keeping the longest description since the duplicates are
+    // typically the same name truncated at different lengths.
+    const bySymbol = new Map<string, StockSearchResult>();
+    for (const entry of filtered) {
+      const existing = bySymbol.get(entry.symbol);
+      if (!existing || entry.companyName.length > existing.companyName.length) {
+        bySymbol.set(entry.symbol, entry);
+      }
+    }
+    return [...bySymbol.values()].slice(0, 25);
   });
 }
 

@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { showAlert } from "../../lib/showAlert";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { InfoDot } from "../../components/InfoDot";
@@ -54,7 +55,7 @@ export function FilingsTab({ symbol }: { symbol: string | undefined }) {
 
   const openFiling = (url: string) => {
     Linking.openURL(url).catch(() => {
-      Alert.alert("Couldn't open filing", "This SEC document link looks broken.");
+      showAlert("Couldn't open filing", "This SEC document link looks broken.");
     });
   };
 
