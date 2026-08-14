@@ -16,7 +16,11 @@ alter table simulator_runs add constraint simulator_runs_mode_check
   check (mode in ('single', 'portfolio', 'generated'));
 
 -- 2. The world seed. Null for real-market runs, set for generated ones.
-alter table simulator_runs add column if not exists seed bigint;
+--    integer, not bigint, on purpose: seeds are capped at 2^31-1 so they fit
+--    exactly, and bigint is the type PostgREST may hand back as a *string*
+--    to protect precision — which would quietly turn seed arithmetic into
+--    string coercion on the server.
+alter table simulator_runs add column if not exists seed integer;
 
 -- 3. The Hall of Fame reads "best completed run per user, per mode" — this
 --    index matches that access pattern directly.

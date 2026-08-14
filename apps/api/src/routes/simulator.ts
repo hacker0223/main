@@ -18,6 +18,18 @@ import {
 export const simulatorRouter = Router();
 simulatorRouter.use(requireAuth);
 
+// A missing migration surfaced as the generic "try again shortly" message,
+// which is actively misleading — retrying can never fix a schema that isn't
+// there, and it cost a full debugging round-trip to discover that's all it
+// was. Detect that specific case and say so plainly instead.
+function isSchemaNotMigrated(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    (m.includes("seed") && (m.includes("column") || m.includes("schema cache"))) ||
+    m.includes("simulator_runs_mode_check")
+  );
+}
+
 function handleError(context: string, err: unknown, res: Response) {
   const error = err instanceof Error ? err : new Error(String(err));
   console.error(`[simulator:${context}] ${error.name}: ${error.message}`);
@@ -25,6 +37,12 @@ function handleError(context: string, err: unknown, res: Response) {
     res.status(400).json({ error: error.message });
   } else if (error instanceof NotFoundError) {
     res.status(404).json({ error: error.message });
+  } else if (isSchemaNotMigrated(error.message)) {
+    res.status(503).json({
+      error:
+        "Generated market isn't set up on this server yet — its database migration hasn't been run. (Nothing you did wrong; this needs a one-time setup step.)",
+      code: "migration_required",
+    });
   } else {
     res.status(502).json({ error: "Something went wrong running the simulator. Try again shortly." });
   }

@@ -19,7 +19,10 @@ export const GENERATED_START_CASH = 10_000;
 // mulberry32 — small, fast, well-distributed seeded PRNG. Same seed always
 // yields the same sequence, on any machine.
 function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
+  // Number() rather than trusting the incoming type: the seed round-trips
+  // through Postgres/PostgREST, and a numeric column arriving as a string
+  // would otherwise reach the bit ops below and silently rely on coercion.
+  let a = Number(seed) >>> 0;
   return function () {
     a = (a + 0x6d2b79f5) >>> 0;
     let t = Math.imul(a ^ (a >>> 15), 1 | a);
