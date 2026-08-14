@@ -7,7 +7,11 @@ import {
   advanceSimulatorRun,
   completeSimulatorRun,
   fetchSimulatorRunState,
+  fetchSimulatorWorld,
   tradeSimulatorRun,
+  type GeneratedCompany,
+  type GeneratedEvent,
+  type GeneratedWorldView,
   type SimulatorRunState,
 } from "../../../src/api/client";
 import { Button } from "../../../src/components/Button";
@@ -30,6 +34,9 @@ export default function SimulatorRunScreen() {
   const [authRequired, setAuthRequired] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [world, setWorld] = useState<GeneratedWorldView | null>(null);
+
+  const isGenerated = state?.run.mode === "generated";
 
   const load = useCallback(() => {
     if (!id) return;
@@ -46,6 +53,25 @@ export default function SimulatorRunScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // The fictional market is re-fetched whenever the run's day changes rather
+  // than cached client-side: the server only ever reveals days the player has
+  // actually reached, so the newly unlocked prices and headlines can only
+  // come from a fresh request.
+  useEffect(() => {
+    if (!id || !isGenerated) return;
+    let cancelled = false;
+    fetchSimulatorWorld(id)
+      .then((w) => {
+        if (!cancelled) setWorld(w);
+      })
+      .catch(() => {
+        /* the run itself already surfaces errors; a missing world just hides the market panels */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, isGenerated, state?.run.sim_date]);
 
   const runAction = async (action: () => Promise<SimulatorRunState>) => {
     setBusy(true);
@@ -95,11 +121,30 @@ export default function SimulatorRunScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ headerShown: true, title: run.mode === "single" ? "Single-stock run" : "Portfolio run" }} />
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title:
+            run.mode === "single" ? "Single-stock run" : run.mode === "portfolio" ? "Portfolio run" : "Generated market",
+        }}
+      />
       <ScrollView contentContainerStyle={styles.scroll}>
+        {isGenerated ? (
+          <View style={[styles.fictionBanner, { backgroundColor: colors.surfaceRaised }]}>
+            <Ionicons name="planet-outline" size={14} color={colors.textMuted} />
+            <Text style={[typography.micro, { color: colors.textMuted, flex: 1 }]}>
+              Fictional market — every company, price, and headline here is invented.
+            </Text>
+          </View>
+        ) : null}
+
         <View style={[styles.summaryCard, { backgroundColor: colors.accentSurface, borderColor: colors.accent }]}>
-          <Text style={[typography.micro, { color: colors.textMuted }]}>Simulated date</Text>
-          <Text style={[typography.display, { color: colors.text, fontSize: 28 }]}>{run.sim_date}</Text>
+          <Text style={[typography.micro, { color: colors.textMuted }]}>
+            {isGenerated ? "Trading day" : "Simulated date"}
+          </Text>
+          <Text style={[typography.display, { color: colors.text, fontSize: 28 }]}>
+            {isGenerated && world ? `Day ${world.day} of ${world.totalDays}` : run.sim_date}
+          </Text>
           <View style={styles.summaryRow}>
             <View>
               <Text style={[typography.micro, { color: colors.textMuted }]}>Total value</Text>
@@ -126,6 +171,26 @@ export default function SimulatorRunScreen() {
               This run is complete and on the leaderboard.
             </Text>
           </View>
+        ) : isGenerated ? (
+          <>
+            <SectionHeading title="Advance" />
+            <Pressable
+              disabled={busy || (world ? world.day >= world.totalDays : true)}
+              onPress={() => runAction(() => advanceSimulatorRun(run.id, { by: "day" }))}
+              style={[
+                styles.nextDayButton,
+                {
+                  backgroundColor: colors.primary,
+                  opacity: busy || (world ? world.day >= world.totalDays : true) ? 0.4 : 1,
+                },
+              ]}
+            >
+              <Ionicons name="play-forward" size={15} color={colors.onPrimary} />
+              <Text style={[typography.body, { color: colors.onPrimary, fontWeight: "700" }]}>
+                {world && world.day >= world.totalDays ? "Final day reached — end your run" : "Next day"}
+              </Text>
+            </Pressable>
+          </>
         ) : (
           <>
             <SectionHeading title="Fast-forward" />
@@ -144,6 +209,9 @@ export default function SimulatorRunScreen() {
             <JumpToDate simDate={run.sim_date} busy={busy} onJump={(date) => runAction(() => advanceSimulatorRun(run.id, { date }))} colors={colors} />
           </>
         )}
+
+        {isGenerated && world ? <NewsFeed events={world.events} colors={colors} /> : null}
+        {isGenerated && world ? <MarketList companies={world.companies} colors={colors} /> : null}
 
         <SectionHeading title="Holdings" />
         {holdings.length === 0 ? (
@@ -174,7 +242,13 @@ export default function SimulatorRunScreen() {
         )}
 
         {run.status === "active" ? (
-          <TradeForm runId={run.id} mode={run.mode} busy={busy} onTrade={(input) => runAction(() => tradeSimulatorRun(run.id, input))} colors={colors} />
+          <TradeForm
+            mode={run.mode}
+            busy={busy}
+            companies={world?.companies ?? null}
+            onTrade={(input) => runAction(() => tradeSimulatorRun(run.id, input))}
+            colors={colors}
+          />
         ) : null}
 
         {error ? <Text style={[typography.caption, styles.error, { color: colors.negative }]}>{error}</Text> : null}
@@ -232,23 +306,95 @@ function JumpToDate({
   );
 }
 
+// A generated market has a fixed, known list of 20 companies, so there's
+// nothing to search — the picker filters that list locally. Real-market
+// modes keep hitting the live search endpoint.
+function NewsFeed({ events, colors }: { events: GeneratedEvent[]; colors: ReturnType<typeof useTheme>["colors"] }) {
+  if (events.length === 0) return null;
+  return (
+    <>
+      <SectionHeading title="Market news" />
+      {events.slice(0, 8).map((e, i) => {
+        const up = e.impact >= 0;
+        return (
+          <View key={`${e.day}-${i}`} style={[styles.newsRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.newsHeader}>
+              <Text style={[typography.micro, { color: colors.textMuted }]}>
+                Day {e.day} · {e.scope === "market" ? "Market-wide" : e.scope === "sector" ? "Sector" : "Company"}
+              </Text>
+              <Text style={[typography.micro, { color: up ? colors.positive : colors.negative, fontWeight: "700" }]}>
+                {up ? "+" : ""}
+                {(e.impact * 100).toFixed(1)}%
+              </Text>
+            </View>
+            <Text style={[typography.cardTitle, { color: colors.text }]}>{e.headline}</Text>
+            <Text style={[typography.micro, styles.newsDetail, { color: colors.textMuted }]}>{e.detail}</Text>
+          </View>
+        );
+      })}
+    </>
+  );
+}
+
+function MarketList({ companies, colors }: { companies: GeneratedCompany[]; colors: ReturnType<typeof useTheme>["colors"] }) {
+  return (
+    <>
+      <SectionHeading title="The market" />
+      {companies.map((c) => {
+        const up = (c.changePct ?? 0) >= 0;
+        return (
+          <View key={c.symbol} style={[styles.marketRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.cardTitle, { color: colors.text }]}>
+                {c.symbol} <Text style={[typography.micro, { color: colors.textMuted }]}>{c.sector}</Text>
+              </Text>
+              <Text style={[typography.micro, { color: colors.textMuted }]} numberOfLines={1}>
+                {c.name}
+              </Text>
+            </View>
+            <View style={{ alignItems: "flex-end" }}>
+              <Text style={[typography.cardTitle, { color: colors.text }]}>${c.price.toFixed(2)}</Text>
+              {c.changePct !== null ? (
+                <Text style={[typography.micro, { color: up ? colors.positive : colors.negative }]}>
+                  {up ? "+" : ""}
+                  {c.changePct.toFixed(1)}%
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        );
+      })}
+    </>
+  );
+}
+
 function TradeForm({
-  runId,
   mode,
   busy,
+  companies,
   onTrade,
   colors,
 }: {
-  runId: string;
-  mode: "single" | "portfolio";
+  mode: "single" | "portfolio" | "generated";
   busy: boolean;
+  companies: GeneratedCompany[] | null;
   onTrade: (input: { symbol: string; side: "buy" | "sell"; shares: number }) => void;
   colors: ReturnType<typeof useTheme>["colors"];
 }) {
   const [query, setQuery] = useState("");
   const [symbol, setSymbol] = useState<string | null>(null);
   const [sharesText, setSharesText] = useState("");
-  const { results } = useStockSearch(query);
+  const isGenerated = mode === "generated";
+  const { results: searchResults } = useStockSearch(isGenerated ? "" : query);
+
+  const results = isGenerated
+    ? (companies ?? [])
+        .filter((c) => {
+          const q = query.trim().toUpperCase();
+          return q.length === 0 || c.symbol.includes(q) || c.name.toUpperCase().includes(q);
+        })
+        .map((c) => ({ symbol: c.symbol, companyName: c.name }))
+    : searchResults.map((r) => ({ symbol: r.symbol, companyName: r.companyName }));
 
   const shares = parseFloat(sharesText);
   const canTrade = symbol !== null && Number.isFinite(shares) && shares > 0 && !busy;
@@ -269,12 +415,14 @@ function TradeForm({
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder={mode === "single" ? "Search for a stock" : "Search to add a stock"}
+            placeholder={
+              isGenerated ? "Filter the 20 listed companies" : mode === "single" ? "Search for a stock" : "Search to add a stock"
+            }
             placeholderTextColor={colors.textMuted}
             autoCapitalize="characters"
             style={[typography.body, styles.searchInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceRaised }]}
           />
-          {results.slice(0, 5).map((r) => (
+          {results.slice(0, isGenerated ? 6 : 5).map((r) => (
             <Pressable key={r.symbol} onPress={() => { setSymbol(r.symbol); setQuery(""); }} style={styles.resultRow}>
               <Text style={[typography.caption, { color: colors.text }]}>{r.symbol}</Text>
               <Text style={[typography.micro, { color: colors.textMuted }]} numberOfLines={1}>{r.companyName}</Text>
@@ -315,6 +463,12 @@ function TradeForm({
 const styles = StyleSheet.create({
   scroll: { paddingBottom: 40 },
   loading: { marginTop: 60 },
+  fictionBanner: { flexDirection: "row", alignItems: "center", gap: 7, padding: 10, borderRadius: 10, marginBottom: 12 },
+  nextDayButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 12, marginBottom: 8 },
+  newsRow: { padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
+  newsHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 5 },
+  newsDetail: { marginTop: 4, lineHeight: 16 },
+  marketRow: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 6, gap: 10 },
   summaryCard: { padding: 16, borderRadius: 14, borderWidth: 1.5, marginBottom: 16 },
   summaryRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 14 },
   doneBanner: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 10, marginBottom: 16 },

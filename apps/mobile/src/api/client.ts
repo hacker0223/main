@@ -309,10 +309,12 @@ export function fetchNewsSummary(symbol: string): Promise<{ summary: string }> {
 // the client only ever sends intent ("buy 10 shares", "advance a month"),
 // never a price or a result.
 
+export type SimulatorMode = "single" | "portfolio" | "generated";
+
 export interface SimulatorRun {
   id: string;
   user_id: string;
-  mode: "single" | "portfolio";
+  mode: SimulatorMode;
   start_date: string;
   sim_date: string;
   initial_cash: number;
@@ -320,6 +322,7 @@ export interface SimulatorRun {
   status: "active" | "completed";
   final_value: number | null;
   return_pct: number | null;
+  seed: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -344,11 +347,11 @@ export function fetchSimulatorRuns(): Promise<SimulatorRun[]> {
   return apiAuthGet("/api/simulator/runs");
 }
 
-export function createSimulatorRun(input: {
-  mode: "single" | "portfolio";
-  startDate: string;
-  initialCash: number;
-}): Promise<SimulatorRun> {
+export function createSimulatorRun(
+  input:
+    | { mode: "single" | "portfolio"; startDate: string; initialCash: number }
+    | { mode: "generated" }
+): Promise<SimulatorRun> {
   return apiAuthPost("/api/simulator/runs", input);
 }
 
@@ -376,12 +379,52 @@ export function completeSimulatorRun(runId: string): Promise<SimulatorRunState> 
 
 export interface SimulatorLeaderboardEntry {
   id: string;
-  mode: "single" | "portfolio";
+  mode: SimulatorMode;
   start_date: string;
   return_pct: number;
   final_value: number;
+  isYou: boolean;
 }
 
-export function fetchSimulatorLeaderboard(): Promise<SimulatorLeaderboardEntry[]> {
+export interface SimulatorHallOfFame {
+  single: SimulatorLeaderboardEntry[];
+  portfolio: SimulatorLeaderboardEntry[];
+  generated: SimulatorLeaderboardEntry[];
+}
+
+export function fetchSimulatorLeaderboard(): Promise<SimulatorHallOfFame> {
   return apiAuthGet("/api/simulator/leaderboard");
+}
+
+// --- Generated (fictional) market -----------------------------------------
+// Everything below describes an invented market: the companies, the prices,
+// and the headlines are all generated and have no connection to real
+// securities. The server only ever returns days the player has reached.
+
+export interface GeneratedCompany {
+  symbol: string;
+  name: string;
+  sector: string;
+  price: number;
+  changePct: number | null;
+}
+
+export interface GeneratedEvent {
+  day: number;
+  headline: string;
+  detail: string;
+  affects: string[];
+  impact: number;
+  scope: "company" | "sector" | "market";
+}
+
+export interface GeneratedWorldView {
+  day: number;
+  totalDays: number;
+  companies: GeneratedCompany[];
+  events: GeneratedEvent[];
+}
+
+export function fetchSimulatorWorld(runId: string): Promise<GeneratedWorldView> {
+  return apiAuthGet(`/api/simulator/runs/${encodeURIComponent(runId)}/world`);
 }

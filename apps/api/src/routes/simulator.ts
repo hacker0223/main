@@ -9,8 +9,10 @@ import {
   executeTrade,
   getLeaderboard,
   getRunState,
+  getRunWorld,
   listRuns,
   type AdvanceTarget,
+  type SimulatorMode,
 } from "../services/simulatorEngine";
 
 export const simulatorRouter = Router();
@@ -38,26 +40,47 @@ simulatorRouter.get("/runs", async (req, res) => {
 });
 
 interface CreateRunBody {
-  mode: "single" | "portfolio";
+  mode: SimulatorMode;
   startDate: string;
   initialCash: number;
 }
 
+const VALID_MODES: SimulatorMode[] = ["single", "portfolio", "generated"];
+
 simulatorRouter.post("/runs", async (req, res) => {
   const body = req.body as Partial<CreateRunBody>;
-  if (body.mode !== "single" && body.mode !== "portfolio") {
-    res.status(400).json({ error: "mode must be 'single' or 'portfolio'" });
+  if (!body.mode || !VALID_MODES.includes(body.mode)) {
+    res.status(400).json({ error: "mode must be 'single', 'portfolio', or 'generated'" });
     return;
   }
-  if (!body.startDate || typeof body.initialCash !== "number") {
+  // Generated runs supply their own fixed start date, cash, and length —
+  // the client doesn't get to choose any of it, so those fields are only
+  // required for the real-market modes.
+  if (body.mode !== "generated" && (!body.startDate || typeof body.initialCash !== "number")) {
     res.status(400).json({ error: "startDate and initialCash are required" });
     return;
   }
   try {
-    const run = await createRun(req.userId!, { mode: body.mode, startDate: body.startDate, initialCash: body.initialCash });
+    const run = await createRun(req.userId!, {
+      mode: body.mode,
+      startDate: body.startDate,
+      initialCash: body.initialCash,
+    });
     res.status(201).json(run);
   } catch (err) {
     handleError("create", err, res);
+  }
+});
+
+// The visible slice of a generated run's fictional market. Deliberately
+// server-side: it withholds prices and headlines for days the player hasn't
+// reached, which a client-side world could never guarantee.
+simulatorRouter.get("/runs/:id/world", async (req, res) => {
+  try {
+    const world = await getRunWorld(req.userId!, req.params.id);
+    res.json(world);
+  } catch (err) {
+    handleError("world", err, res);
   }
 });
 
@@ -122,9 +145,9 @@ simulatorRouter.post("/runs/:id/complete", async (req, res) => {
 // Public leaderboard data, but still behind requireAuth like the rest of
 // this router — simplest consistent rule for the whole file, and Summit
 // doesn't have any signed-out screen that would need this.
-simulatorRouter.get("/leaderboard", async (_req, res) => {
+simulatorRouter.get("/leaderboard", async (req, res) => {
   try {
-    const entries = await getLeaderboard();
+    const entries = await getLeaderboard(req.userId!);
     res.json(entries);
   } catch (err) {
     handleError("leaderboard", err, res);

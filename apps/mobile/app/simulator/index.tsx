@@ -59,6 +59,9 @@ export default function SimulatorHomeScreen() {
           <SignInPrompt message="Sign in to start a run — your progress and leaderboard spot are tied to your account." />
         ) : (
           <>
+            <Text style={[typography.micro, styles.groupLabel, { color: colors.textMuted }]}>
+              REAL MARKET HISTORY
+            </Text>
             <View style={styles.startRow}>
               <StartCard
                 icon="trending-up-outline"
@@ -75,6 +78,30 @@ export default function SimulatorHomeScreen() {
                 colors={colors}
               />
             </View>
+
+            <Text style={[typography.micro, styles.groupLabel, { color: colors.textMuted }]}>
+              INVENTED MARKET
+            </Text>
+            <Pressable
+              onPress={() => router.push("/simulator/new?mode=generated")}
+              style={({ pressed }) => [
+                styles.generatedCard,
+                { backgroundColor: colors.surface, borderColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+              ]}
+            >
+              <View style={styles.generatedHeader}>
+                <View style={[styles.startIcon, { backgroundColor: colors.primary }]}>
+                  <Ionicons name="planet-outline" size={18} color={colors.onPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.cardTitle, { color: colors.text }]}>Generated market</Text>
+                  <Text style={[typography.caption, styles.startSummary, { color: colors.textMuted }]}>
+                    A brand-new fictional market every run: 20 invented companies, their own news cycle, seven days
+                    to trade it. Nothing here is a real security.
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
 
             <Pressable onPress={() => router.push("/simulator/leaderboard")} style={styles.leaderboardLink}>
               <Ionicons name="trophy-outline" size={16} color={colors.primary} />
@@ -139,10 +166,12 @@ function RunRow({ run, colors }: { run: SimulatorRun; colors: ReturnType<typeof 
     >
       <View style={{ flex: 1 }}>
         <Text style={[typography.cardTitle, { color: colors.text }]}>
-          {run.mode === "single" ? "Single stock" : "Portfolio"} run
+          {run.mode === "single" ? "Single stock" : run.mode === "portfolio" ? "Portfolio" : "Generated market"} run
         </Text>
         <Text style={[typography.micro, { color: colors.textMuted }]}>
-          Started {run.start_date} · now at {run.sim_date} · {run.status === "completed" ? "Completed" : "In progress"}
+          {run.mode === "generated"
+            ? `Fictional market · ${run.status === "completed" ? "Completed" : "In progress"}`
+            : `Started ${run.start_date} · now at ${run.sim_date} · ${run.status === "completed" ? "Completed" : "In progress"}`}
         </Text>
       </View>
       {run.return_pct !== null ? (
@@ -159,7 +188,10 @@ function RunRow({ run, colors }: { run: SimulatorRun; colors: ReturnType<typeof 
 
 const styles = StyleSheet.create({
   scroll: { paddingBottom: 40 },
-  startRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
+  groupLabel: { fontWeight: "700", letterSpacing: 0.6, marginBottom: 8 },
+  generatedCard: { padding: 14, borderRadius: 14, borderWidth: 1.5, marginBottom: 18 },
+  generatedHeader: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
+  startRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
   startCard: { flex: 1, padding: 14, borderRadius: 14, borderWidth: 1.5 },
   startIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   startSummary: { marginTop: 3, lineHeight: 16 },
