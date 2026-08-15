@@ -392,8 +392,10 @@ export interface SimulatorHallOfFame {
   generated: SimulatorLeaderboardEntry[];
 }
 
+// /leaderboard (without /sections) is frozen on its original flat-array
+// shape for older installed builds — this app wants the sectioned view.
 export function fetchSimulatorLeaderboard(): Promise<SimulatorHallOfFame> {
-  return apiAuthGet("/api/simulator/leaderboard");
+  return apiAuthGet("/api/simulator/leaderboard/sections");
 }
 
 // --- Generated (fictional) market -----------------------------------------

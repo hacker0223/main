@@ -85,7 +85,16 @@ export default function SimulatorLeaderboardScreen() {
           <ErrorState message={error} onRetry={load} />
         ) : data ? (
           SECTIONS.map((section) => (
-            <Section key={section.key} icon={section.icon} title={section.title} blurb={section.blurb} entries={data[section.key]} />
+            <Section
+              key={section.key}
+              icon={section.icon}
+              title={section.title}
+              blurb={section.blurb}
+              // Defaulted rather than indexed straight in: a response missing
+              // a section (version skew between app and server) should show an
+              // empty section, not take the whole screen down.
+              entries={Array.isArray(data[section.key]) ? data[section.key] : []}
+            />
           ))
         ) : null}
       </ScrollView>

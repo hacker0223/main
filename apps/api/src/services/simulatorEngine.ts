@@ -356,3 +356,38 @@ export async function getLeaderboard(userId: string): Promise<HallOfFame> {
   ]);
   return { single, portfolio, generated };
 }
+
+// Flat, mode-agnostic list — the ORIGINAL /leaderboard response shape.
+//
+// This exists purely for app builds shipped before the sectioned Hall of
+// Fame: they do `entries.map(...)` straight on the response, so returning
+// the newer { single, portfolio, generated } object to them throws
+// "map is not a function" and takes the whole screen down. An installed
+// binary can't be patched retroactively, so the old endpoint has to keep
+// honouring its old contract. New clients use /leaderboard/sections.
+export async function getFlatLeaderboard(userId: string): Promise<LeaderboardEntry[]> {
+  const { data, error } = await admin()
+    .from("simulator_runs")
+    .select("id, user_id, mode, start_date, return_pct, final_value")
+    .eq("status", "completed")
+    .order("return_pct", { ascending: false })
+    .limit(HALL_OF_FAME_SCAN);
+  if (error) throw new Error(`Failed to load leaderboard: ${error.message}`);
+
+  const seenUsers = new Set<string>();
+  const entries: LeaderboardEntry[] = [];
+  for (const row of (data ?? []) as (LeaderboardEntry & { user_id: string })[]) {
+    if (seenUsers.has(row.user_id)) continue;
+    seenUsers.add(row.user_id);
+    entries.push({
+      id: row.id,
+      mode: row.mode,
+      start_date: row.start_date,
+      return_pct: row.return_pct,
+      final_value: row.final_value,
+      isYou: row.user_id === userId,
+    });
+    if (entries.length >= HALL_OF_FAME_SIZE) break;
+  }
+  return entries;
+}

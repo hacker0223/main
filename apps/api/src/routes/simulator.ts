@@ -7,6 +7,7 @@ import {
   completeRun,
   createRun,
   executeTrade,
+  getFlatLeaderboard,
   getLeaderboard,
   getRunState,
   getRunWorld,
@@ -163,11 +164,25 @@ simulatorRouter.post("/runs/:id/complete", async (req, res) => {
 // Public leaderboard data, but still behind requireAuth like the rest of
 // this router — simplest consistent rule for the whole file, and Summit
 // doesn't have any signed-out screen that would need this.
+// Kept on its original flat-array contract for app builds that predate the
+// sectioned Hall of Fame — changing this shape crashed those installed
+// binaries outright (they call .map on the response). Never repoint this at
+// getLeaderboard; add a new path instead, the way /sections does below.
 simulatorRouter.get("/leaderboard", async (req, res) => {
   try {
-    const entries = await getLeaderboard(req.userId!);
+    const entries = await getFlatLeaderboard(req.userId!);
     res.json(entries);
   } catch (err) {
     handleError("leaderboard", err, res);
+  }
+});
+
+// Sectioned Hall of Fame (single / portfolio / generated) for current builds.
+simulatorRouter.get("/leaderboard/sections", async (req, res) => {
+  try {
+    const sections = await getLeaderboard(req.userId!);
+    res.json(sections);
+  } catch (err) {
+    handleError("leaderboard-sections", err, res);
   }
 });
