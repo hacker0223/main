@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { CollapsibleText } from "../../../components/CollapsibleText";
 import { typography } from "../../../theme/typography";
 import { useTheme } from "../../../theme/useTheme";
 import type { DevilsAdvocateResponse } from "../../../api/client";
@@ -105,7 +106,10 @@ export function DevilsAdvocatePanel({
               <Ionicons name="swap-horizontal" size={14} color={colors.accent} />
               <Text style={[typography.micro, styles.resultLabel, { color: colors.accent }]}>THE CASE AGAINST IT</Text>
             </View>
-            <Text style={[typography.body, styles.resultText, { color: colors.text }]}>{data.devilsAdvocate}</Text>
+            {/* Collapsed by default, same as the analog panel's narration —
+                the counter-thesis is the longest text in Pattern Lab, and
+                showing it in full pushed everything else off screen. */}
+            <CollapsibleText text={data.devilsAdvocate} style={styles.resultText} collapsedLines={4} />
           </View>
         </View>
       ) : null}

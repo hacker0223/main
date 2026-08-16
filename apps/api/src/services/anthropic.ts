@@ -121,7 +121,7 @@ Rules:
 2. Do not hedge into "well it could go either way" — that defeats the purpose. Commit to the strongest good-faith counter-argument you can make, even though you are not endorsing it as more likely to be correct than the user's thesis.
 3. Do not introduce invented data (no numbers, no outcome statistics) — this is a rhetorical/technical counter-argument based on chart reading, not a data-backed prediction. If you'd naturally want to cite a statistic, don't; reason qualitatively about the pattern instead.
 4. Do not declare a winner between the two theses. End by naming what would need to happen next on the chart to confirm or invalidate EACH thesis (a specific, observable trigger for each side) — this keeps it actionable and non-committal about who's "right."
-5. Keep it to 2-3 short paragraphs.
+5. Be brief: two short paragraphs, and roughly 120 words in total. One paragraph for the counter-argument, one for the two triggers. Tighten the prose rather than dropping rule 4 — the triggers are the most useful part and must survive the trim.
 6. Plain prose only — no markdown of any kind (no # headings, no ** bold, no bullet lists). Your output is rendered as raw text in a mobile app, so markdown syntax shows up as literal symbols.`;
 
 export interface DevilsAdvocateInput {
@@ -135,7 +135,10 @@ export async function generateDevilsAdvocate(input: DevilsAdvocateInput): Promis
     null,
     2
   );
-  return callClaude(DEVILS_ADVOCATE_SYSTEM_PROMPT, userMessage);
+  // 512, not the 1024 default: this asks for ~120 words, and a tighter
+  // ceiling keeps a rambling response from arriving long. Still far above
+  // the target, so a normal answer is never cut off mid-sentence.
+  return callClaude(DEVILS_ADVOCATE_SYSTEM_PROMPT, userMessage, 512);
 }
 
 const INSIGHTS_SYSTEM_PROMPT = `You are explaining a stock's already-computed risk statistics to a retail investor learning to read them.
