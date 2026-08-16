@@ -15,15 +15,21 @@
 </head>
 <body>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: July 9, 2026</p>
+  <p class="updated">Last updated: August 15, 2026</p>
 
   <p>Summit ("we," "our," "the app") is a stock research and education app. This policy explains what data the app handles and why.</p>
 
-  <h2>No account, no sign-up</h2>
-  <p>Summit does not require you to create an account. There is no login, no email collection, and no user identity tied to your use of the app.</p>
+  <h2>Accounts are optional</h2>
+  <p>You can use almost all of Summit without an account — browsing stocks, your watchlist, price alerts, Pattern Lab, Chart Sandbox, and the glossary all work signed out.</p>
+  <p>An account is only required for the Time Machine simulator, because its saved runs and its Hall of Fame need somewhere to live that survives reinstalling the app. If you create one, we store your <strong>email address</strong>. Passwords are handled by our authentication provider (Supabase) and are stored hashed — we never see or keep your plaintext password. If you use Sign in with Apple, Apple provides an email address (which may be a private relay address if you choose to hide yours).</p>
 
-  <h2>What's stored, and where</h2>
-  <p>Your onboarding preferences (investor type, interests, risk tolerance), your watchlist, and any charts you create in Chart Sandbox are stored <strong>locally on your device only</strong>, using standard on-device storage. None of this is sent to or stored on our servers. Uninstalling the app removes it.</p>
+  <h2>What's stored on your device only</h2>
+  <p>Your onboarding preferences (investor type, interests, risk tolerance), your watchlist, your price alerts, and any charts you create in Chart Sandbox are stored <strong>locally on your device</strong>, using standard on-device storage. None of this is sent to or stored on our servers, whether or not you have an account. Uninstalling the app removes it.</p>
+
+  <h2>What's stored on our servers</h2>
+  <p>If you use the Time Machine simulator while signed in, we store the simulator runs you create: the mode, start date, starting and current cash, the fictional or historical positions you hold, your trade history within the simulation, and the final result of completed runs. This is tied to your account so your runs are still there when you come back. None of it involves real money, real trades, or a real brokerage account — the simulator is entirely hypothetical.</p>
+  <p>When you finish a run, it can appear on the Hall of Fame leaderboard, which is visible to other signed-in users. The leaderboard shows only the run's mode, its start date, and its percentage return — <strong>it does not show your email address or any other identifying information</strong>. Your own entry is highlighted only for you.</p>
+  <p>You can ask us to delete your account and everything associated with it at any time by emailing the address at the bottom of this page.</p>
 
   <h2>Market data requests</h2>
   <p>When you look up a stock, the app requests quote, fundamentals, news, and filings data from our backend, which in turn sources it from Finnhub, Yahoo Finance, and SEC EDGAR. These requests include the ticker symbol you're viewing but no personal identifiers — we don't know who's asking, only what's being asked for.</p>
@@ -42,8 +48,11 @@
   <h2>Third-party data sources</h2>
   <p>Market data, news, and filings are sourced from Finnhub, Yahoo Finance, and SEC EDGAR. Each has its own terms governing the data they provide; Summit acts as a display layer over publicly available information and does not claim ownership of this data.</p>
 
+  <h2>Service providers</h2>
+  <p>We use <a href="https://supabase.com/privacy">Supabase</a> for account authentication and to store simulator data, and <a href="https://www.anthropic.com/legal/privacy">Anthropic</a> for the AI explanation features described above. Our backend is hosted on <a href="https://render.com/privacy">Render</a>. These providers process data on our behalf so the app can function; we don't sell data to anyone.</p>
+
   <h2>Children</h2>
-  <p>Summit is not directed at children under 13 and we do not knowingly collect information from them (noting again that we don't collect personal information from anyone, of any age).</p>
+  <p>Summit is not directed at children under 13, and we do not knowingly collect personal information from them. If you believe a child under 13 has created an account, contact us at the address below and we'll delete it.</p>
 
   <h2>Changes to this policy</h2>
   <p>If our data practices change, we'll update this page and the "Last updated" date above.</p>

@@ -9,7 +9,7 @@ import { useTheme } from "../src/theme/useTheme";
 // depend on those being hosted somewhere, and App Review expects legal
 // content to actually be reachable. Keep the three sources in sync when
 // terms change.
-const LAST_UPDATED = "July 10, 2026";
+const LAST_UPDATED = "August 15, 2026";
 
 const sections: { heading: string; paragraphs: string[] }[] = [
   {
@@ -27,8 +27,17 @@ const sections: { heading: string; paragraphs: string[] }[] = [
   {
     heading: "AI features",
     paragraphs: [
-      "Pattern Lab's narration and Devil's Advocate use Claude (Anthropic's AI model) to explain numbers that are computed independently in our own code — the AI is never asked to invent a prediction or a buy/sell signal, and is instructed not to. Even so, AI-generated text can be wrong or imprecise. Treat it as a starting point for your own thinking, not a source of truth.",
+      "Pattern Lab's narration and Devil's Advocate, and the optional Summarize buttons on the AI Insights and News tabs, use Claude (Anthropic's AI model) to explain numbers and articles that come from our own code or from published sources — the AI is never asked to invent a prediction or a buy/sell signal, and is instructed not to. Even so, AI-generated text can be wrong or imprecise. Treat it as a starting point for your own thinking, not a source of truth.",
+      "The Summarize buttons only run when you tap them; nothing is sent to Anthropic just by opening a tab.",
       "If you type your own thesis into Devil's Advocate, that text is sent to Anthropic's API to generate a counter-argument. It is not stored by us, and is subject to Anthropic's own privacy policy for API usage.",
+    ],
+  },
+  {
+    heading: "The Time Machine simulator",
+    paragraphs: [
+      "The simulator is a game. It uses no real money, places no real orders, and is not connected to any brokerage — you cannot deposit, withdraw, or realise anything of value in it, and results there confer no financial benefit.",
+      "Real-market runs replay historical prices from past dates. They exclude real-world costs such as commissions, spreads, slippage, taxes, and dividends, and benefit from hindsight in choosing a start date, so returns shown are not a realistic estimate of what any real portfolio would have earned.",
+      "Generated-market runs are entirely fictional: the companies, prices, and news headlines are invented by our software and refer to no real security, company, or event.",
     ],
   },
   {
@@ -38,11 +47,14 @@ const sections: { heading: string; paragraphs: string[] }[] = [
     ],
   },
   {
-    heading: "Privacy: no account, no sign-up",
+    heading: "Privacy: accounts are optional",
     paragraphs: [
-      "Summit does not require an account. There is no login, no email collection, and no user identity tied to your use of the app.",
-      "Your onboarding preferences, watchlist, price alerts, and any charts you create in Chart Sandbox are stored locally on your device only. None of this is sent to or stored on our servers. Uninstalling the app removes it.",
-      "When you look up a stock, the app requests market data from our backend using the ticker symbol you're viewing — no personal identifiers. We don't know who's asking, only what's being asked for.",
+      "Almost all of Summit works without an account — stocks, watchlist, alerts, Pattern Lab, Chart Sandbox, and the glossary. An account is only needed for the Time Machine simulator, whose saved runs and Hall of Fame have to live somewhere that survives a reinstall.",
+      "If you create one, we store your email address. Passwords are handled by our authentication provider and stored hashed — we never see your plaintext password.",
+      "Your onboarding preferences, watchlist, price alerts, and any charts you create in Chart Sandbox are stored locally on your device only, whether or not you have an account. Uninstalling the app removes them.",
+      "Simulator runs are stored on our servers and tied to your account. Completed runs can appear on the Hall of Fame, which shows only the mode, start date, and percentage return — never your email or any identifying information.",
+      "When you look up a stock, the app requests market data from our backend using the ticker symbol you're viewing — no personal identifiers attached to the lookup itself.",
+      "You can ask us to delete your account and everything tied to it at any time via the support email on the Account tab.",
     ],
   },
   {

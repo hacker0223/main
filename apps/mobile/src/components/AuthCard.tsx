@@ -6,10 +6,10 @@ import { useAuthStore } from "../store/authStore";
 import { typography } from "../theme/typography";
 import { useTheme } from "../theme/useTheme";
 
-// The only place in the app that touches accounts. Everything else — the
-// watchlist, alerts, disclosures — stays local and works fully signed-out;
-// this exists purely so a future subscription has a stable identity to
-// attach to.
+// The only place in the app that signs you in. Everything else — the
+// watchlist, alerts, disclosures — stays local and works fully signed-out.
+// An account is what the Time Machine simulator hangs its saved runs and
+// Hall of Fame entries off, and what a future subscription would attach to.
 export function AuthCard() {
   const { colors } = useTheme();
   const { user, loading, error, signIn, signUp, signOut, clearError } = useAuthStore();
@@ -50,7 +50,8 @@ export function AuthCard() {
         {mode === "signIn" ? "Sign in" : "Create an account"}
       </Text>
       <Text style={[typography.micro, styles.subtitle, { color: colors.textMuted }]}>
-        Not required to use Summit — this is only here for whenever a subscription needs a place to attach to.
+        Optional — the rest of Summit works signed out. An account saves your Time Machine runs and your spot on
+        the Hall of Fame.
       </Text>
 
       {appleAvailable ? (

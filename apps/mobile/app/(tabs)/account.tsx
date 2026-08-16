@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import { router } from "expo-router";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { showAlert } from "../../src/lib/showAlert";
@@ -90,7 +91,12 @@ export default function AccountScreen() {
           <Button label="Restart onboarding" variant="secondary" onPress={restartOnboarding} />
         </View>
 
-        <Text style={[typography.micro, styles.version, { color: colors.textMuted }]}>Summit v0.0.1</Text>
+        {/* Read from app config rather than hardcoded — the literal here said
+            v0.0.1 while the app shipped as 2.0.0, which is exactly the kind of
+            drift a hardcoded string guarantees. */}
+        <Text style={[typography.micro, styles.version, { color: colors.textMuted }]}>
+          Summit v{Constants.expoConfig?.version ?? "2.0.0"}
+        </Text>
       </ScrollView>
     </Screen>
   );

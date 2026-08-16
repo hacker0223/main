@@ -1,4 +1,5 @@
 import { Stack, router } from "expo-router";
+import Constants from "expo-constants";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Screen } from "../src/components/Screen";
@@ -6,7 +7,9 @@ import { SummitWordmark } from "../src/components/SummitWordmark";
 import { typography } from "../src/theme/typography";
 import { useTheme } from "../src/theme/useTheme";
 
-const APP_VERSION = "0.0.1";
+// From app config, not a literal — the hardcoded value here had drifted to
+// 0.0.1 while the app shipped as 2.0.0.
+const APP_VERSION = Constants.expoConfig?.version ?? "2.0.0";
 
 export default function AboutScreen() {
   const { colors } = useTheme();
@@ -35,12 +38,14 @@ export default function AboutScreen() {
         <Text style={[typography.body, styles.paragraph, { color: colors.text }]}>
           Summit is a stock research and education app for casual investors: live quotes, fundamentals,
           technicals, news, and SEC filings, plus hands-on learning tools — Chart Sandbox for practicing
-          chart reading, and Pattern Lab for exploring how similar historical chart shapes actually played
-          out.
+          chart reading, Pattern Lab for exploring how similar historical chart shapes actually played out,
+          Compare for lining tickers up side by side, and the Time Machine simulator for investing fake
+          money in real market history or in a generated fictional market.
         </Text>
         <Text style={[typography.body, styles.paragraph, { color: colors.textMuted }]}>
           Summit explains and contextualizes — it never tells you what to buy or sell, and it doesn't
           execute trades. Statistical estimates always come with their real backtested accuracy attached.
+          Nothing in the simulator involves real money or a real brokerage account.
         </Text>
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -56,6 +61,9 @@ export default function AboutScreen() {
           </Text>
           <Text style={[typography.caption, styles.sourceRow, { color: colors.textMuted }]}>
             AI explanations — Claude (Anthropic)
+          </Text>
+          <Text style={[typography.caption, styles.sourceRow, { color: colors.textMuted }]}>
+            Accounts & simulator storage — Supabase
           </Text>
         </View>
 
