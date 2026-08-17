@@ -288,6 +288,19 @@ export async function completeRun(userId: string, runId: string): Promise<RunSta
   return getRunState(userId, runId);
 }
 
+// Quitting is a delete, not a third status: an abandoned run has nothing
+// left to show (it never reaches the Hall of Fame and its numbers are
+// mid-flight), so keeping it would only clutter "Your runs" and add a
+// state every query would have to filter around. Holdings and transactions
+// go with it via ON DELETE CASCADE.
+export async function abandonRun(userId: string, runId: string): Promise<void> {
+  // Ownership check first — deleting straight by id would let anyone with a
+  // run id erase someone else's run, since the service-role key bypasses RLS.
+  await fetchOwnedRun(userId, runId);
+  const { error } = await admin().from("simulator_runs").delete().eq("id", runId);
+  if (error) throw new Error(`Failed to quit run: ${error.message}`);
+}
+
 export async function listRuns(userId: string): Promise<RunRow[]> {
   const { data, error } = await admin().from("simulator_runs").select("*").eq("user_id", userId).order("created_at", { ascending: false });
   if (error) throw new Error(`Failed to list runs: ${error.message}`);

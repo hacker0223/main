@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
   AuthRequiredError,
+  abandonSimulatorRun,
   advanceSimulatorRun,
   completeSimulatorRun,
   fetchSimulatorRunState,
@@ -34,6 +35,7 @@ export default function SimulatorRunScreen() {
   const [authRequired, setAuthRequired] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [confirmQuit, setConfirmQuit] = useState(false);
   const [world, setWorld] = useState<GeneratedWorldView | null>(null);
 
   const isGenerated = state?.run.mode === "generated";
@@ -255,16 +257,45 @@ export default function SimulatorRunScreen() {
 
         {run.status === "active" ? (
           <View style={styles.completeAction}>
-            <Button label="End run" variant="secondary" onPress={() => setConfirmEnd(true)} disabled={busy} />
+            <Button label="End run & record result" onPress={() => setConfirmEnd(true)} disabled={busy} />
+            <Pressable
+              onPress={() => setConfirmQuit(true)}
+              disabled={busy}
+              hitSlop={8}
+              style={styles.quitLink}
+            >
+              <Text style={[typography.caption, { color: colors.negative, fontWeight: "600" }]}>
+                Quit without saving
+              </Text>
+            </Pressable>
+
             <ConfirmDialog
               visible={confirmEnd}
               title="End this run?"
-              message="This locks in your final value and adds it to the leaderboard. You can't undo this."
+              message="This locks in your final value and adds it to the Hall of Fame. You can't undo this."
               confirmLabel="End run"
               onCancel={() => setConfirmEnd(false)}
               onConfirm={() => {
                 setConfirmEnd(false);
                 runAction(() => completeSimulatorRun(run.id));
+              }}
+            />
+            <ConfirmDialog
+              visible={confirmQuit}
+              title="Quit this run?"
+              message="The run is deleted and nothing is recorded — it won't appear on the Hall of Fame or in your runs. You can't undo this."
+              confirmLabel="Quit run"
+              onCancel={() => setConfirmQuit(false)}
+              onConfirm={async () => {
+                setConfirmQuit(false);
+                setBusy(true);
+                try {
+                  await abandonSimulatorRun(run.id);
+                  router.replace("/simulator");
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Couldn't quit the run.");
+                  setBusy(false);
+                }
               }}
             />
           </View>
@@ -486,4 +517,5 @@ const styles = StyleSheet.create({
   tradeButton: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: "center" },
   error: { marginTop: 12 },
   completeAction: { marginTop: 20 },
+  quitLink: { alignSelf: "center", marginTop: 14, paddingVertical: 6 },
 });

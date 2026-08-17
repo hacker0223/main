@@ -377,6 +377,21 @@ export function completeSimulatorRun(runId: string): Promise<SimulatorRunState> 
   return apiAuthPost(`/api/simulator/runs/${encodeURIComponent(runId)}/complete`);
 }
 
+// Quit without recording a result — the run is deleted and never reaches
+// the Hall of Fame, unlike completeSimulatorRun.
+export async function abandonSimulatorRun(runId: string): Promise<void> {
+  if (!API_URL) throw new Error("Can't reach the server — app isn't configured with a backend URL.");
+  const res = await fetch(`${API_URL}/api/simulator/runs/${encodeURIComponent(runId)}`, {
+    method: "DELETE",
+    headers: await authHeader(),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const message = body.error || `Request failed: ${res.status}`;
+    throw res.status === 401 ? new AuthRequiredError(message) : new Error(message);
+  }
+}
+
 export interface SimulatorLeaderboardEntry {
   id: string;
   mode: SimulatorMode;

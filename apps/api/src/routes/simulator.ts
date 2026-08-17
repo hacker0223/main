@@ -3,6 +3,7 @@ import { requireAuth } from "../middleware/auth";
 import { NotFoundError } from "../services/errors";
 import {
   SimulatorError,
+  abandonRun,
   advanceRun,
   completeRun,
   createRun,
@@ -149,6 +150,17 @@ simulatorRouter.post("/runs/:id/advance", async (req, res) => {
     res.json(state);
   } catch (err) {
     handleError("advance", err, res);
+  }
+});
+
+// Quit a run without recording it. Distinct from /complete, which locks in
+// a result and puts it on the Hall of Fame.
+simulatorRouter.delete("/runs/:id", async (req, res) => {
+  try {
+    await abandonRun(req.userId!, req.params.id);
+    res.status(204).end();
+  } catch (err) {
+    handleError("abandon", err, res);
   }
 });
 
