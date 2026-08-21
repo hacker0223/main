@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
 import { AppleSignInButton, useAppleSignInAvailable } from "./AppleSignInButton";
 import { Button } from "./Button";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { deleteAccount } from "../api/client";
 import { useAuthStore } from "../store/authStore";
 import { typography } from "../theme/typography";
 import { useTheme } from "../theme/useTheme";
@@ -18,6 +20,25 @@ export function AuthCard() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [justSignedUp, setJustSignedUp] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async () => {
+    setConfirmDelete(false);
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount();
+      // The account no longer exists server-side, but the device still
+      // holds a session token until it expires — clear it immediately
+      // rather than leaving a signed-in UI pointed at a deleted account.
+      await signOut();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Couldn't delete your account.");
+      setDeleting(false);
+    }
+  };
 
   if (user) {
     return (
@@ -25,6 +46,25 @@ export function AuthCard() {
         <Text style={[typography.caption, { color: colors.textMuted }]}>Signed in as</Text>
         <Text style={[typography.cardTitle, styles.email, { color: colors.text }]}>{user.email}</Text>
         <Button label="Sign out" variant="secondary" onPress={signOut} />
+
+        {deleteError ? <Text style={[typography.caption, styles.error, { color: colors.negative }]}>{deleteError}</Text> : null}
+
+        {deleting ? (
+          <ActivityIndicator color={colors.negative} style={styles.loading} />
+        ) : (
+          <Text onPress={() => setConfirmDelete(true)} style={[typography.caption, styles.deleteLink, { color: colors.negative }]}>
+            Delete account
+          </Text>
+        )}
+
+        <ConfirmDialog
+          visible={confirmDelete}
+          title="Delete your account?"
+          message="This permanently deletes your account, every Time Machine run you've saved, and your spot on the Hall of Fame. This can't be undone. Your local watchlist and alerts stay on this device and aren't affected."
+          confirmLabel="Delete account"
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={handleDeleteAccount}
+        />
       </View>
     );
   }
@@ -115,6 +155,7 @@ const styles = StyleSheet.create({
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
   dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },
   email: { marginTop: 2, marginBottom: 14 },
+  deleteLink: { textAlign: "center", marginTop: 14, fontWeight: "600" },
   input: { borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 10 },
   error: { marginBottom: 10 },
   notice: { marginBottom: 10 },

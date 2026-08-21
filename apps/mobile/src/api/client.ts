@@ -445,3 +445,22 @@ export interface GeneratedWorldView {
 export function fetchSimulatorWorld(runId: string): Promise<GeneratedWorldView> {
   return apiAuthGet(`/api/simulator/runs/${encodeURIComponent(runId)}/world`);
 }
+
+// --- Account deletion -------------------------------------------------
+// Apple Guideline 5.1.1(v): account creation requires in-app account
+// deletion, not just sign-out or deactivation. This calls the backend
+// (the anon key this app holds can't delete an auth.users row — that
+// needs the service-role key), which also cascades every simulator run,
+// holding, and transaction tied to the account.
+export async function deleteAccount(): Promise<void> {
+  if (!API_URL) throw new Error("Can't reach the server — app isn't configured with a backend URL.");
+  const res = await fetch(`${API_URL}/api/account`, {
+    method: "DELETE",
+    headers: await authHeader(),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const message = body.error || `Request failed: ${res.status}`;
+    throw res.status === 401 ? new AuthRequiredError(message) : new Error(message);
+  }
+}
