@@ -5,6 +5,7 @@ import morgan from "morgan";
 import { stocksRouter } from "./routes/stocks";
 import { patternLabRouter } from "./routes/patternLab";
 import { simulatorRouter } from "./routes/simulator";
+import { startSupabaseKeepAlive } from "./services/supabaseKeepAlive";
 import { accountRouter } from "./routes/account";
 
 const app = express();
@@ -59,4 +60,5 @@ process.on("uncaughtException", (err) => {
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`Summit API listening on port ${port}`);
+  startSupabaseKeepAlive();
 });
